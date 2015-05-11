@@ -1,0 +1,1314 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configurationDescriptor version="95">
+  <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
+    <df root="." name="0">
+      <df name="core">
+        <df name="dev">
+          <in>leds.c</in>
+          <in>nullradio.c</in>
+          <in>serial-line.c</in>
+          <in>slip.c</in>
+        </df>
+        <df name="lib">
+          <in>aes-128.c</in>
+          <in>assert.c</in>
+          <in>crc16.c</in>
+          <in>gcr.c</in>
+          <in>ifft.c</in>
+          <in>list.c</in>
+          <in>me.c</in>
+          <in>me_tabs.c</in>
+          <in>memb.c</in>
+          <in>mmem.c</in>
+          <in>petsciiconv.c</in>
+          <in>print-stats.c</in>
+          <in>random.c</in>
+          <in>ringbuf.c</in>
+          <in>sensors.c</in>
+          <in>settings.c</in>
+          <in>trickle-timer.c</in>
+        </df>
+        <df name="net">
+          <df name="ip">
+            <in>dhcpc.c</in>
+            <in>psock.c</in>
+            <in>resolv.c</in>
+            <in>simple-udp.c</in>
+            <in>slipdev.c</in>
+            <in>tcp-socket.c</in>
+            <in>tcpip.c</in>
+            <in>udp-socket.c</in>
+            <in>uip-debug.c</in>
+            <in>uip-packetqueue.c</in>
+            <in>uip-split.c</in>
+            <in>uip-udp-packet.c</in>
+            <in>uiplib.c</in>
+          </df>
+          <df name="ipv6">
+            <in>sicslowpan.c</in>
+            <in>uip-ds6-nbr.c</in>
+            <in>uip-ds6-route.c</in>
+            <in>uip-ds6.c</in>
+            <in>uip-icmp6.c</in>
+            <in>uip-nd6.c</in>
+            <in>uip6.c</in>
+          </df>
+          <df name="llsec">
+            <in>anti-replay.c</in>
+            <in>ccm-star.c</in>
+            <in>nullsec.c</in>
+          </df>
+          <df name="mac">
+            <in>csma.c</in>
+            <in>frame802154.c</in>
+            <in>framer-802154.c</in>
+            <in>framer-nullmac.c</in>
+            <in>framer.c</in>
+            <in>mac-sequence.c</in>
+            <in>mac.c</in>
+            <in>nullmac.c</in>
+            <in>nullrdc-noframer.c</in>
+            <in>nullrdc.c</in>
+            <in>phase.c</in>
+          </df>
+          <df name="rime">
+            <in>rimestats.c</in>
+          </df>
+          <df name="rpl">
+            <in>rpl-dag.c</in>
+            <in>rpl-ext-header.c</in>
+            <in>rpl-icmp6.c</in>
+            <in>rpl-mrhof.c</in>
+            <in>rpl-of0.c</in>
+            <in>rpl-timers.c</in>
+            <in>rpl.c</in>
+          </df>
+          <in>linkaddr.c</in>
+          <in>nbr-table.c</in>
+          <in>netstack.c</in>
+          <in>packetbuf.c</in>
+          <in>queuebuf.c</in>
+        </df>
+        <df name="sys">
+          <in>arg.c</in>
+          <in>autostart.c</in>
+          <in>compower.c</in>
+          <in>ctimer.c</in>
+          <in>energest.c</in>
+          <in>etimer.c</in>
+          <in>mt.c</in>
+          <in>process.c</in>
+          <in>procinit.c</in>
+          <in>rtimer.c</in>
+          <in>stimer.c</in>
+          <in>timer.c</in>
+        </df>
+      </df>
+      <df name="platform">
+        <df name="cooja">
+          <df name="cfs">
+            <in>cfs-cooja.c</in>
+          </df>
+          <df name="dev">
+            <in>beep.c</in>
+            <in>button-sensor.c</in>
+            <in>cooja-radio.c</in>
+            <in>eeprom.c</in>
+            <in>ip.c</in>
+            <in>leds-arch.c</in>
+            <in>moteid.c</in>
+            <in>pir-sensor.c</in>
+            <in>rs232.c</in>
+            <in>vib-sensor.c</in>
+            <in>watchdog.c</in>
+          </df>
+          <df name="lib">
+            <in>simEnvChange.c</in>
+          </df>
+          <df name="net">
+            <in>uip-driver.c</in>
+          </df>
+          <df name="sys">
+            <in>clock.c</in>
+            <in>cooja_mt.c</in>
+            <in>cooja_mtarch.c</in>
+            <in>log.c</in>
+          </df>
+          <in>rtimer-arch.c</in>
+          <in>slip-arch.c</in>
+        </df>
+      </df>
+      <df name="tools">
+        <df name="cooja">
+          <df name="build">
+            <df name="obj_cooja">
+              <in>libtest1.c</in>
+              <in>libtest2.c</in>
+              <in>libtest3.c</in>
+              <in>libtest4.c</in>
+              <in>libtest5.c</in>
+            </df>
+            <in>symbols.c</in>
+          </df>
+        </df>
+      </df>
+    </df>
+    <logicalFolder name="ExternalFiles"
+                   displayName="Important Files"
+                   projectFiles="false"
+                   kind="IMPORTANT_FILES_FOLDER">
+      <itemPath>Makefile.include</itemPath>
+    </logicalFolder>
+  </logicalFolder>
+  <sourceFolderFilter>^(nbproject)$</sourceFolderFilter>
+  <sourceRootList>
+    <Elem>.</Elem>
+  </sourceRootList>
+  <projectmakefile>Makefile.include</projectmakefile>
+  <confs>
+    <conf name="Default" type="0">
+      <toolsSet>
+        <compilerSet>default</compilerSet>
+        <dependencyChecking>false</dependencyChecking>
+        <rebuildPropChanged>false</rebuildPropChanged>
+      </toolsSet>
+      <flagsDictionary>
+        <element flagsID="0" commonFlags="-std=c89"/>
+      </flagsDictionary>
+      <codeAssistance>
+      </codeAssistance>
+      <makefileType>
+        <makeTool>
+          <buildCommandWorkingDir>.</buildCommandWorkingDir>
+          <buildCommand>${MAKE} -f Makefile.include</buildCommand>
+          <cleanCommand>${MAKE} -f Makefile.include clean</cleanCommand>
+          <executablePath></executablePath>
+        </makeTool>
+      </makefileType>
+      <item path="core/dev/leds.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/dev/nullradio.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/dev/serial-line.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/sys</pElem>
+            <pElem>core/lib</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/dev/slip.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/sys</pElem>
+            <pElem>core/net/ip</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/lib/aes-128.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/lib</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/lib/assert.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/lib</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/lib/crc16.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/lib</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/lib/gcr.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/lib</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/lib/ifft.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/lib</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/lib/list.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/lib</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/lib/me.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/lib</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/lib/me_tabs.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/lib</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/lib/memb.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/lib</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/lib/mmem.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/lib</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/lib/petsciiconv.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/lib</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/lib/print-stats.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/lib</pElem>
+            <pElem>core/net</pElem>
+            <pElem>core/net/rime</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/lib/random.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/lib</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/lib/ringbuf.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/lib</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/lib/sensors.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/lib</pElem>
+            <pElem>core/sys</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/lib/settings.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/lib/trickle-timer.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/lib</pElem>
+            <pElem>platform/cooja</pElem>
+            <pElem>core/sys</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/net/ip/dhcpc.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>platform/cooja</pElem>
+            <pElem>core/sys</pElem>
+            <pElem>core/net</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/net/ip/psock.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/sys</pElem>
+            <pElem>core/net</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/net/ip/resolv.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>platform/cooja</pElem>
+            <pElem>core/sys</pElem>
+            <pElem>core/net/ipv6</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/net/ip/simple-udp.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/sys</pElem>
+            <pElem>core/net</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/net/ip/slipdev.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/net/ip/tcp-socket.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/sys</pElem>
+            <pElem>core/lib</pElem>
+            <pElem>core/net</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/net/ip/tcpip.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>platform/cooja</pElem>
+            <pElem>core/sys</pElem>
+            <pElem>core/lib</pElem>
+            <pElem>core/net/ipv6</pElem>
+            <pElem>core/net</pElem>
+            <pElem>core/net/rpl</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/net/ip/udp-socket.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/sys</pElem>
+            <pElem>core/net</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/net/ip/uip-debug.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/net/ip/uip-packetqueue.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>platform/cooja</pElem>
+            <pElem>core/sys</pElem>
+            <pElem>core/lib</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/net/ip/uip-split.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/net/ip/uip-udp-packet.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/sys</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/net/ip/uiplib.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/net/ipv6/sicslowpan.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/net</pElem>
+            <pElem>core/net/ipv6</pElem>
+            <pElem>platform/cooja</pElem>
+            <pElem>core/sys</pElem>
+            <pElem>core/net/ip</pElem>
+            <pElem>core/net/mac</pElem>
+            <pElem>core/net/llsec</pElem>
+            <pElem>core/net/rime</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/net/ipv6/uip-ds6-nbr.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/net</pElem>
+            <pElem>core/net/ipv6</pElem>
+            <pElem>platform/cooja</pElem>
+            <pElem>core/net/ip</pElem>
+            <pElem>core/sys</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/net/ipv6/uip-ds6-route.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/net/ipv6</pElem>
+            <pElem>platform/cooja</pElem>
+            <pElem>core/net/ip</pElem>
+            <pElem>core/sys</pElem>
+            <pElem>core/lib</pElem>
+            <pElem>core/net</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/net/ipv6/uip-ds6.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/net/ipv6</pElem>
+            <pElem>platform/cooja</pElem>
+            <pElem>core/net/ip</pElem>
+            <pElem>core/sys</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/net/ipv6/uip-icmp6.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/net/ipv6</pElem>
+            <pElem>core/net/ip</pElem>
+            <pElem>core/sys</pElem>
+            <pElem>core/lib</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/net/ipv6/uip-nd6.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/net/ipv6</pElem>
+            <pElem>platform/cooja</pElem>
+            <pElem>core/net/ip</pElem>
+            <pElem>core/sys</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/net/ipv6/uip6.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/net/ipv6</pElem>
+            <pElem>core/net/ip</pElem>
+            <pElem>core/sys</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/net/linkaddr.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/net</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/net/llsec/anti-replay.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/net/mac</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/net/llsec/ccm-star.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/lib</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/net/llsec/nullsec.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/net/mac</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/net/mac/csma.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/net</pElem>
+            <pElem>core/net/mac</pElem>
+            <pElem>platform/cooja</pElem>
+            <pElem>core/sys</pElem>
+            <pElem>core/net/llsec</pElem>
+            <pElem>core/lib</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/net/mac/frame802154.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/net/mac</pElem>
+            <pElem>core/net</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/net/mac/framer-802154.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/net</pElem>
+            <pElem>core/net/mac</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/net/mac/framer-nullmac.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/net</pElem>
+            <pElem>core/net/mac</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/net/mac/framer.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/net/mac</pElem>
+            <pElem>core/net</pElem>
+            <pElem>core/net/llsec</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/net/mac/mac-sequence.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/net</pElem>
+            <pElem>core/net/mac</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/net/mac/mac.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/net/mac</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/net/mac/nullmac.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/net/mac</pElem>
+            <pElem>core/net/llsec</pElem>
+            <pElem>core/net</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/net/mac/nullrdc-noframer.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/net/mac</pElem>
+            <pElem>core/dev</pElem>
+            <pElem>core/net</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/net/mac/nullrdc.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/net</pElem>
+            <pElem>core/net/mac</pElem>
+            <pElem>platform/cooja</pElem>
+            <pElem>core/dev</pElem>
+            <pElem>core/net/rime</pElem>
+            <pElem>platform/cooja/lib</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/net/mac/phase.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/net</pElem>
+            <pElem>core/net/mac</pElem>
+            <pElem>platform/cooja</pElem>
+            <pElem>core/sys</pElem>
+            <pElem>core/lib</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/net/nbr-table.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/net</pElem>
+            <pElem>core/lib</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/net/netstack.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/net</pElem>
+            <pElem>core/dev</pElem>
+            <pElem>core/net/mac</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/net/packetbuf.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/net</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/net/queuebuf.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/net</pElem>
+            <pElem>core/lib</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/net/rime/rimestats.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+        </cTool>
+      </item>
+      <item path="core/net/rpl/rpl-dag.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/net/rpl</pElem>
+            <pElem>platform/cooja</pElem>
+            <pElem>core/sys</pElem>
+            <pElem>core/net/ip</pElem>
+            <pElem>core/net/ipv6</pElem>
+            <pElem>core/net</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/net/rpl/rpl-ext-header.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/net</pElem>
+            <pElem>core/net/rpl</pElem>
+            <pElem>platform/cooja</pElem>
+            <pElem>core/net/ip</pElem>
+            <pElem>core/sys</pElem>
+            <pElem>core/lib</pElem>
+            <pElem>core/net/ipv6</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/net/rpl/rpl-icmp6.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/net</pElem>
+            <pElem>core/net/rpl</pElem>
+            <pElem>platform/cooja</pElem>
+            <pElem>core/sys</pElem>
+            <pElem>core/net/ip</pElem>
+            <pElem>core/lib</pElem>
+            <pElem>core/net/ipv6</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/net/rpl/rpl-mrhof.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/net/rpl</pElem>
+            <pElem>platform/cooja</pElem>
+            <pElem>core/net/ip</pElem>
+            <pElem>core/sys</pElem>
+            <pElem>core/net/ipv6</pElem>
+            <pElem>core/net/mac</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/net/rpl/rpl-of0.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/net/rpl</pElem>
+            <pElem>platform/cooja</pElem>
+            <pElem>core/net/ip</pElem>
+            <pElem>core/sys</pElem>
+            <pElem>core/net/ipv6</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/net/rpl/rpl-timers.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/net/rpl</pElem>
+            <pElem>platform/cooja</pElem>
+            <pElem>core/net/ip</pElem>
+            <pElem>core/sys</pElem>
+            <pElem>core/net/ipv6</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/net/rpl/rpl.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/net/rpl</pElem>
+            <pElem>platform/cooja</pElem>
+            <pElem>core/net/ip</pElem>
+            <pElem>core/sys</pElem>
+            <pElem>core/lib</pElem>
+            <pElem>core/net/ipv6</pElem>
+            <pElem>core/net</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/sys/arg.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/sys</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/sys/autostart.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/sys</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/sys/compower.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/net</pElem>
+            <pElem>core/sys</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/sys/ctimer.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/sys</pElem>
+            <pElem>platform/cooja</pElem>
+            <pElem>core/lib</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/sys/energest.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/sys</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/sys/etimer.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/sys</pElem>
+            <pElem>platform/cooja</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/sys/mt.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/sys</pElem>
+            <pElem>platform/cooja</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/sys/process.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/sys</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/sys/procinit.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/sys</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/sys/rtimer.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/sys</pElem>
+            <pElem>platform/cooja</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/sys/stimer.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/sys</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="core/sys/timer.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/sys</pElem>
+            <pElem>platform/cooja</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <folder path="0/core/dev">
+        <cTool>
+          <incDir>
+            <pElem>core/dev</pElem>
+          </incDir>
+        </cTool>
+      </folder>
+      <folder path="0/core/net/ip">
+        <cTool>
+          <incDir>
+            <pElem>core/net/ip</pElem>
+          </incDir>
+        </cTool>
+      </folder>
+      <folder path="0/core/net/llsec">
+        <cTool>
+          <incDir>
+            <pElem>core/net</pElem>
+            <pElem>core/net/llsec</pElem>
+          </incDir>
+        </cTool>
+      </folder>
+      <folder path="0/core/net/rime">
+        <cTool>
+          <incDir>
+            <pElem>core/net/rime</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </folder>
+      <folder path="0/platform/cooja/cfs">
+        <cTool>
+          <incDir>
+            <pElem>platform/cooja/cfs</pElem>
+            <pElem>platform/cooja/lib</pElem>
+            <pElem>core/cfs</pElem>
+            <pElem>platform/cooja</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </folder>
+      <folder path="0/platform/cooja/lib">
+        <cTool>
+          <incDir>
+            <pElem>platform/cooja/lib</pElem>
+            <pElem>platform/cooja</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </folder>
+      <folder path="0/platform/cooja/net">
+        <cTool>
+          <incDir>
+            <pElem>platform/cooja/net</pElem>
+            <pElem>core/net/mac</pElem>
+            <pElem>core/net/llsec</pElem>
+            <pElem>core/net</pElem>
+            <pElem>core/net/ip</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </folder>
+      <folder path="0/platform/cooja/sys">
+        <cTool>
+          <incDir>
+            <pElem>platform/cooja/sys</pElem>
+          </incDir>
+        </cTool>
+      </folder>
+      <folder path="0/tools/cooja/build/obj_cooja">
+        <cTool>
+          <incDir>
+            <pElem>tools/cooja/build/obj_cooja</pElem>
+            <pElem>/usr/lib/jvm/java-8-oracle/include/linux</pElem>
+            <pElem>/usr/lib/jvm/java-8-oracle/include</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </folder>
+      <item path="platform/cooja/cfs/cfs-cooja.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+        </cTool>
+      </item>
+      <item path="platform/cooja/dev/beep.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>platform/cooja/dev</pElem>
+            <pElem>platform/cooja/lib</pElem>
+            <pElem>platform/cooja</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="platform/cooja/dev/button-sensor.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>platform/cooja/dev</pElem>
+            <pElem>core/sys</pElem>
+            <pElem>core/lib</pElem>
+            <pElem>platform/cooja/lib</pElem>
+            <pElem>platform/cooja</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="platform/cooja/dev/cooja-radio.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/net</pElem>
+            <pElem>platform/cooja/dev</pElem>
+            <pElem>core/sys</pElem>
+            <pElem>platform/cooja/lib</pElem>
+            <pElem>core/net/rime</pElem>
+            <pElem>core/dev</pElem>
+            <pElem>core/net/mac</pElem>
+            <pElem>platform/cooja</pElem>
+            <pElem>core</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="platform/cooja/dev/eeprom.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>platform/cooja/dev</pElem>
+            <pElem>platform/cooja/lib</pElem>
+            <pElem>core/dev</pElem>
+            <pElem>core</pElem>
+            <pElem>platform/cooja</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="platform/cooja/dev/ip.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>platform/cooja/dev</pElem>
+            <pElem>platform/cooja/lib</pElem>
+            <pElem>platform/cooja</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="platform/cooja/dev/leds-arch.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>platform/cooja/dev</pElem>
+            <pElem>platform/cooja/lib</pElem>
+            <pElem>platform/cooja</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="platform/cooja/dev/moteid.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>platform/cooja/dev</pElem>
+            <pElem>platform/cooja/lib</pElem>
+            <pElem>platform/cooja</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="platform/cooja/dev/pir-sensor.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>platform/cooja/dev</pElem>
+            <pElem>core/lib</pElem>
+            <pElem>platform/cooja/lib</pElem>
+            <pElem>platform/cooja</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="platform/cooja/dev/rs232.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>platform/cooja/dev</pElem>
+            <pElem>platform/cooja/lib</pElem>
+            <pElem>platform/cooja</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="platform/cooja/dev/vib-sensor.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>platform/cooja/dev</pElem>
+            <pElem>core/lib</pElem>
+            <pElem>platform/cooja/lib</pElem>
+            <pElem>platform/cooja</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="platform/cooja/dev/watchdog.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>platform/cooja/dev</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="platform/cooja/lib/simEnvChange.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+        </cTool>
+      </item>
+      <item path="platform/cooja/net/uip-driver.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+        </cTool>
+      </item>
+      <item path="platform/cooja/rtimer-arch.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>platform/cooja</pElem>
+            <pElem>platform/cooja/lib</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="platform/cooja/slip-arch.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>platform/cooja</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="platform/cooja/sys/clock.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>platform/cooja/lib</pElem>
+            <pElem>platform/cooja</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="platform/cooja/sys/cooja_mt.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/sys</pElem>
+            <pElem>platform/cooja</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="platform/cooja/sys/cooja_mtarch.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/sys</pElem>
+            <pElem>platform/cooja</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="platform/cooja/sys/log.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>platform/cooja/lib</pElem>
+            <pElem>platform/cooja</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+      <item path="tools/cooja/build/obj_cooja/libtest1.c"
+            ex="false"
+            tool="0"
+            flavor2="2">
+        <cTool flags="0">
+        </cTool>
+      </item>
+      <item path="tools/cooja/build/obj_cooja/libtest2.c"
+            ex="false"
+            tool="0"
+            flavor2="2">
+        <cTool flags="0">
+        </cTool>
+      </item>
+      <item path="tools/cooja/build/obj_cooja/libtest3.c"
+            ex="false"
+            tool="0"
+            flavor2="2">
+        <cTool flags="0">
+        </cTool>
+      </item>
+      <item path="tools/cooja/build/obj_cooja/libtest4.c"
+            ex="false"
+            tool="0"
+            flavor2="2">
+        <cTool flags="0">
+        </cTool>
+      </item>
+      <item path="tools/cooja/build/obj_cooja/libtest5.c"
+            ex="false"
+            tool="0"
+            flavor2="2">
+        <cTool flags="0">
+        </cTool>
+      </item>
+      <item path="tools/cooja/build/symbols.c" ex="false" tool="0" flavor2="2">
+        <cTool flags="0">
+          <incDir>
+            <pElem>core/loader</pElem>
+            <pElem>tools/cooja/build</pElem>
+          </incDir>
+        </cTool>
+      </item>
+    </conf>
+  </confs>
+</configurationDescriptor>

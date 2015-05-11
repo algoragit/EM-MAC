@@ -8,7 +8,7 @@
   <project EXPORT="discard">[APPS_DIR]/powertracker</project>
   <simulation>
     <title>My simulation</title>
-    <randomseed>123456</randomseed>
+    <randomseed>generated</randomseed>
     <motedelay_us>1000000</motedelay_us>
     <radiomedium>
       org.contikios.cooja.radiomediums.UDGM
@@ -24,9 +24,9 @@
       org.contikios.cooja.mspmote.SkyMoteType
       <identifier>sky1</identifier>
       <description>Sky Mote Type #sky1</description>
-      <source EXPORT="discard">[CONTIKI_DIR]/examples/ipv6/rpl-collect/udp-sink.c</source>
+      <source EXPORT="discard">[CONTIKI_DIR]/examples/ipv6/rpl-collect-Algora/udp-sink.c</source>
       <commands EXPORT="discard">make udp-sink.sky TARGET=sky</commands>
-      <firmware EXPORT="copy">[CONTIKI_DIR]/examples/ipv6/rpl-collect/udp-sink.sky</firmware>
+      <firmware EXPORT="copy">[CONTIKI_DIR]/examples/ipv6/rpl-collect-Algora/udp-sink.sky</firmware>
       <moteinterface>org.contikios.cooja.interfaces.Position</moteinterface>
       <moteinterface>org.contikios.cooja.interfaces.RimeAddress</moteinterface>
       <moteinterface>org.contikios.cooja.interfaces.IPAddress</moteinterface>
@@ -47,9 +47,9 @@
       org.contikios.cooja.mspmote.SkyMoteType
       <identifier>sky2</identifier>
       <description>Sky Mote Type #sky2</description>
-      <source EXPORT="discard">[CONTIKI_DIR]/examples/ipv6/rpl-collect/udp-sender.c</source>
+      <source EXPORT="discard">[CONTIKI_DIR]/examples/ipv6/rpl-collect-Algora/udp-sender.c</source>
       <commands EXPORT="discard">make udp-sender.sky TARGET=sky</commands>
-      <firmware EXPORT="copy">[CONTIKI_DIR]/examples/ipv6/rpl-collect/udp-sender.sky</firmware>
+      <firmware EXPORT="copy">[CONTIKI_DIR]/examples/ipv6/rpl-collect-Algora/udp-sender.sky</firmware>
       <moteinterface>org.contikios.cooja.interfaces.Position</moteinterface>
       <moteinterface>org.contikios.cooja.interfaces.RimeAddress</moteinterface>
       <moteinterface>org.contikios.cooja.interfaces.IPAddress</moteinterface>
@@ -420,10 +420,10 @@
   <plugin>
     org.contikios.cooja.plugins.SimControl
     <width>259</width>
-    <z>1</z>
+    <z>0</z>
     <height>184</height>
-    <location_x>801</location_x>
-    <location_y>299</location_y>
+    <location_x>12</location_x>
+    <location_y>768</location_y>
   </plugin>
   <plugin>
     org.contikios.cooja.plugins.Visualizer
@@ -431,13 +431,23 @@
       <skin>org.contikios.cooja.plugins.skins.IDVisualizerSkin</skin>
       <skin>org.contikios.cooja.plugins.skins.AttributeVisualizerSkin</skin>
       <skin>org.contikios.cooja.plugins.skins.UDGMVisualizerSkin</skin>
+      <skin>org.contikios.cooja.plugins.skins.MoteTypeVisualizerSkin</skin>
       <viewport>1.836243522352668 0.0 0.0 1.836243522352668 -124.43273668589376 177.8080782058222</viewport>
     </plugin_config>
     <width>610</width>
-    <z>4</z>
+    <z>1</z>
     <height>482</height>
-    <location_x>184</location_x>
-    <location_y>-3</location_y>
+    <location_x>420</location_x>
+    <location_y>-2</location_y>
+  </plugin>
+  <plugin>
+    org.contikios.cooja.plugins.collectview.CollectView
+    <mote_arg>0</mote_arg>
+    <width>203</width>
+    <z>3</z>
+    <height>75</height>
+    <location_x>120</location_x>
+    <location_y>120</location_y>
   </plugin>
   <plugin>
     org.contikios.cooja.plugins.LogListener
@@ -446,35 +456,11 @@
       <formatted_time />
       <coloring />
     </plugin_config>
-    <width>1027</width>
+    <width>1471</width>
     <z>2</z>
-    <height>294</height>
-    <location_x>799</location_x>
-    <location_y>0</location_y>
-  </plugin>
-  <plugin>
-    org.contikios.cooja.plugins.collectview.CollectView
-    <mote_arg>0</mote_arg>
-    <width>203</width>
-    <z>3</z>
-    <height>75</height>
-    <location_x>3</location_x>
-    <location_y>2</location_y>
-  </plugin>
-  <plugin>
-    org.contikios.cooja.plugins.RadioLogger
-    <plugin_config>
-      <split>262</split>
-      <formatted_time />
-      <showdups>false</showdups>
-      <hidenodests>false</hidenodests>
-      <analyzers name="6lowpan" />
-    </plugin_config>
-    <width>871</width>
-    <z>0</z>
-    <height>560</height>
-    <location_x>1000</location_x>
-    <location_y>404</location_y>
+    <height>240</height>
+    <location_x>9</location_x>
+    <location_y>493</location_y>
   </plugin>
 </simconf>
 

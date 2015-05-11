@@ -1,0 +1,40 @@
+digraph {
+outputorder=edgesfirst
+edge[color="LightGrey"]
+subgraph "cluster_core/sys" {
+label = "core/sys"
+}
+subgraph "cluster_core/dev" {
+label = "core/dev"
+}
+subgraph "cluster_core/lib" {
+label = "core/lib"
+}
+subgraph "cluster_core/net/ipv6" {
+label = "core/net/ipv6"
+}
+subgraph "cluster_core/net/ip" {
+label = "core/net/ip"
+}
+subgraph "cluster_core/net/rpl" {
+label = "core/net/rpl"
+}
+subgraph "cluster_core/net" {
+label = "core/net"
+}
+subgraph "cluster_core/net/mac" {
+label = "core/net/mac"
+}
+subgraph "cluster_core/net/mac/contikimac" {
+label = "core/net/mac/contikimac"
+}
+subgraph "cluster_core/net/llsec" {
+label = "core/net/llsec"
+}
+subgraph "cluster_dev/cc2420" {
+label = "dev/cc2420"
+}
+subgraph "cluster_dev/sht11" {
+label = "dev/sht11"
+}
+}

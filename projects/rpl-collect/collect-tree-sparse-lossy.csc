@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <simconf>
-  <project EXPORT="discard">[APPS_DIR]/mrm</project>
-  <project EXPORT="discard">[APPS_DIR]/mspsim</project>
-  <project EXPORT="discard">[APPS_DIR]/avrora</project>
-  <project EXPORT="discard">[APPS_DIR]/serial_socket</project>
-  <project EXPORT="discard">[APPS_DIR]/collect-view</project>
-  <project EXPORT="discard">[APPS_DIR]/powertracker</project>
+  <project EXPORT="discard">[CONTIKI_DIR]/tools/cooja/apps/mrm</project>
+  <project EXPORT="discard">[CONTIKI_DIR]/tools/cooja/apps/mspsim</project>
+  <project EXPORT="discard">[CONTIKI_DIR]/tools/cooja/apps/avrora</project>
+  <project EXPORT="discard">[CONTIKI_DIR]/tools/cooja/apps/serial_socket</project>
+  <project EXPORT="discard">[CONTIKI_DIR]/tools/cooja/apps/collect-view</project>
   <simulation>
     <title>My simulation</title>
+    <delaytime>0</delaytime>
     <randomseed>123456</randomseed>
     <motedelay_us>1000000</motedelay_us>
     <radiomedium>
@@ -24,9 +24,9 @@
       org.contikios.cooja.mspmote.SkyMoteType
       <identifier>sky1</identifier>
       <description>Sky Mote Type #sky1</description>
-      <source EXPORT="discard">[CONTIKI_DIR]/examples/ipv6/rpl-collect/udp-sink.c</source>
+      <source EXPORT="discard">[CONFIG_DIR]/udp-sink.c</source>
       <commands EXPORT="discard">make udp-sink.sky TARGET=sky</commands>
-      <firmware EXPORT="copy">[CONTIKI_DIR]/examples/ipv6/rpl-collect/udp-sink.sky</firmware>
+      <firmware EXPORT="copy">[CONFIG_DIR]/udp-sink.sky</firmware>
       <moteinterface>org.contikios.cooja.interfaces.Position</moteinterface>
       <moteinterface>org.contikios.cooja.interfaces.RimeAddress</moteinterface>
       <moteinterface>org.contikios.cooja.interfaces.IPAddress</moteinterface>
@@ -47,9 +47,9 @@
       org.contikios.cooja.mspmote.SkyMoteType
       <identifier>sky2</identifier>
       <description>Sky Mote Type #sky2</description>
-      <source EXPORT="discard">[CONTIKI_DIR]/examples/ipv6/rpl-collect/udp-sender.c</source>
+      <source EXPORT="discard">[CONFIG_DIR]/udp-sender.c</source>
       <commands EXPORT="discard">make udp-sender.sky TARGET=sky</commands>
-      <firmware EXPORT="copy">[CONTIKI_DIR]/examples/ipv6/rpl-collect/udp-sender.sky</firmware>
+      <firmware EXPORT="copy">[CONFIG_DIR]/udp-sender.sky</firmware>
       <moteinterface>org.contikios.cooja.interfaces.Position</moteinterface>
       <moteinterface>org.contikios.cooja.interfaces.RimeAddress</moteinterface>
       <moteinterface>org.contikios.cooja.interfaces.IPAddress</moteinterface>
@@ -420,10 +420,10 @@
   <plugin>
     org.contikios.cooja.plugins.SimControl
     <width>259</width>
-    <z>1</z>
+    <z>3</z>
     <height>184</height>
-    <location_x>801</location_x>
-    <location_y>299</location_y>
+    <location_x>0</location_x>
+    <location_y>0</location_y>
   </plugin>
   <plugin>
     org.contikios.cooja.plugins.Visualizer
@@ -434,47 +434,68 @@
       <viewport>1.836243522352668 0.0 0.0 1.836243522352668 -124.43273668589376 177.8080782058222</viewport>
     </plugin_config>
     <width>610</width>
-    <z>4</z>
+    <z>2</z>
     <height>482</height>
-    <location_x>184</location_x>
-    <location_y>-3</location_y>
+    <location_x>420</location_x>
+    <location_y>-2</location_y>
   </plugin>
   <plugin>
     org.contikios.cooja.plugins.LogListener
     <plugin_config>
       <filter />
-      <formatted_time />
-      <coloring />
     </plugin_config>
-    <width>1027</width>
-    <z>2</z>
-    <height>294</height>
-    <location_x>799</location_x>
-    <location_y>0</location_y>
+    <width>1347</width>
+    <z>4</z>
+    <height>150</height>
+    <location_x>0</location_x>
+    <location_y>438</location_y>
+  </plugin>
+  <plugin>
+    org.contikios.cooja.plugins.TimeLine
+    <plugin_config>
+      <mote>0</mote>
+      <mote>1</mote>
+      <mote>2</mote>
+      <mote>3</mote>
+      <mote>4</mote>
+      <mote>5</mote>
+      <mote>6</mote>
+      <mote>7</mote>
+      <mote>8</mote>
+      <mote>9</mote>
+      <mote>10</mote>
+      <mote>11</mote>
+      <mote>12</mote>
+      <mote>13</mote>
+      <mote>14</mote>
+      <mote>15</mote>
+      <mote>16</mote>
+      <mote>17</mote>
+      <mote>18</mote>
+      <mote>19</mote>
+      <mote>20</mote>
+      <mote>21</mote>
+      <mote>22</mote>
+      <mote>23</mote>
+      <mote>24</mote>
+      <showRadioRXTX />
+      <split>109</split>
+      <zoomfactor>500.0</zoomfactor>
+    </plugin_config>
+    <width>1347</width>
+    <z>0</z>
+    <height>150</height>
+    <location_x>0</location_x>
+    <location_y>588</location_y>
   </plugin>
   <plugin>
     org.contikios.cooja.plugins.collectview.CollectView
     <mote_arg>0</mote_arg>
     <width>203</width>
-    <z>3</z>
+    <z>1</z>
     <height>75</height>
-    <location_x>3</location_x>
-    <location_y>2</location_y>
-  </plugin>
-  <plugin>
-    org.contikios.cooja.plugins.RadioLogger
-    <plugin_config>
-      <split>262</split>
-      <formatted_time />
-      <showdups>false</showdups>
-      <hidenodests>false</hidenodests>
-      <analyzers name="6lowpan" />
-    </plugin_config>
-    <width>871</width>
-    <z>0</z>
-    <height>560</height>
-    <location_x>1000</location_x>
-    <location_y>404</location_y>
+    <location_x>120</location_x>
+    <location_y>120</location_y>
   </plugin>
 </simconf>
 
