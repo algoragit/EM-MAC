@@ -28,8 +28,12 @@ static int channel;
 static int unvisited_channels;
 static int *channel_list;
 static int *channel_list_copy;
+static int channel_n;
+static int unvisited_channels_n;
+static int *channel_list_n;
+static int *channel_list_copy_n;
 static unsigned int rand_num;
-static unsigned int rand_num_neighbor[2];
+static unsigned int rand_num_neighbor;
 static int multiplier=15213;
 static int increment=11237;
 
@@ -49,7 +53,7 @@ LIST(muchmac_queue_unicast);
 PROCESS(send_packet, "muchmac send process");
 
 static volatile unsigned char radio_is_on = 0;
-//static volatile unsigned char in_broadcast_slot = 0;
+//static volatile unsigned char in_broadcast_slot = 0;[2]
 //static volatile unsigned char in_unicast_slot = 0;
 
 static int
@@ -68,7 +72,7 @@ turn_off()
 
 #define BROADCAST_CHANNEL	26
 static unsigned int
-get_rand_num(const linkaddr_t *addr)
+get_rand_num()
 {
 	if (first_time==0){
 		rand_num = rand_num*multiplier+increment;
@@ -76,10 +80,13 @@ get_rand_num(const linkaddr_t *addr)
 		rand_num = (linkaddr_node_addr.u8[0])*multiplier+increment;
 		first_time=0;
 	}
-	//linkaddr_t dest;
-	//get_neighbor_channel_and_time(&dest.u8[0]);
+	linkaddr_t dest;
+	dest.u8[0]=2;
+	get_neighbor_channel_and_time(&dest.u8[0]);
+	printf("\n\n%d\n", dest.u8[0]);
 	//get_channel(rand_num);
 	//printf("Random number generated: %u\n", rand_num);
+
 	return rand_num;
 }
 
@@ -117,21 +124,66 @@ int get_channel(unsigned int random4chan){
 		printf("\n");*/
 		channel_list=channel_list_copy;
 	}
-	printf("Channel from get_channel: %d from random4chan: %u\n", channel, random4chan);
+	//printf("Channel from get_channel: %d from random4chan: %u\n", channel, random4chan);
 	return channel;
 }
 
-static int
+int get_neighbor_channel(unsigned int random4chan){
+	int i=0;
+	if (unvisited_channels_n == 1){
+		channel_n = channel_list_n[0];
+		unvisited_channels_n=16;
+		for (i=0; i<16; i++){
+			channel_list_n[i]=i+11;
+		}
+	}else{
+		//int random_pointer=random4chan % unvisited_channels;
+		channel_n = channel_list_n[random4chan % unvisited_channels_n];
+		unvisited_channels_n--;
+		i=0;
+		int j=0;
+		/*printf("\nrandom_pointer: (%d)\n", random_pointer);
+		for (i=0;i<=unvisited_channels;i++)
+			printf("%d ", channel_list[i]);
+		printf("\n");*/
+		i=0;
+		while (i<=unvisited_channels_n){
+			if (i!=(random4chan % (unvisited_channels_n+1))){
+				channel_list_copy_n[j]=channel_list_n[i];
+				i++;
+				j++;
+			}else{
+				i++;
+			}
+		}
+		/*printf("Copy: ");
+		for (i=0;i<unvisited_channels;i++)
+			printf("%d ", channel_list_copy[i]);
+		printf("\n");*/
+		channel_list_n=channel_list_copy_n;
+	}
+	//printf("Channel from get_neighbor_channel: %d from random4chan: %u\n", channel_n, random4chan);
+	return channel_n;
+}
+
+int
 get_neighbor_channel_and_time(const linkaddr_t *addr)
 {
-	rand_num_neighbor[0]=(addr->u8[0])*multiplier+increment;
+	// The first random number generated for each node is used to generate the first wake-up channel.
+	int neighbor_channel;
+	rand_num_neighbor=(addr->u8[0])*multiplier+increment;
+	printf("rand_num_neighbor (0): %u, ", rand_num_neighbor);
+	neighbor_channel=get_neighbor_channel(rand_num_neighbor);
+	printf("neighbor_channel (0): %u\n", neighbor_channel);
 	int i;
 	unsigned int neighbor_time_seconds=0;
-	unsigned int neighbor_time_ticks_acc=rand_num_neighbor[0];
+	unsigned int neighbor_time_ticks_acc=rand_num_neighbor;
 	unsigned int neighbor_time_ticks_temp=0;
 	int local_seconds = clock_seconds();
 	while (local_seconds+1 > neighbor_time_seconds){
-		neighbor_time_ticks_temp=(rand_num_neighbor[0])*multiplier+increment;
+		rand_num_neighbor=rand_num_neighbor*multiplier+increment;
+		printf("rand_num_neighbor (1): %u\n", rand_num_neighbor);
+		neighbor_time_ticks_temp=rand_num_neighbor;  // We must use the same expression used in the powercycle() function (NOT DONE)
 		// Adding next wake-up interval
 		if (((neighbor_time_ticks_temp/2) + (neighbor_time_ticks_acc/2)) > (RTIMER_SECOND)){
 			neighbor_time_ticks_acc = (neighbor_time_ticks_temp/2 + neighbor_time_ticks_acc/2) % RTIMER_SECOND;
@@ -149,10 +201,16 @@ get_neighbor_channel_and_time(const linkaddr_t *addr)
 		}else {
 			neighbor_time_ticks_acc += ON_PERIOD;
 		}
-		rand_num_neighbor[1]=rand_num_neighbor[0];
-		rand_num_neighbor[0]=neighbor_time_ticks_temp;
+		//rand_num_neighbor[1]=rand_num_neighbor[0];
+		rand_num_neighbor=rand_num_neighbor*multiplier+increment;
+		printf("rand_num_neighbor (2): %u, ", rand_num_neighbor);
+		neighbor_channel=get_neighbor_channel(rand_num_neighbor);
+		printf("neighbor_channel (2): %u\n", neighbor_channel);
 	}
-	int neighbor_channel=rand_num_neighbor[1]%16+11;
+	unvisited_channels_n=16;
+	for (i=0; i<16; i++){
+		channel_list_n[i]=i+11;
+	}
 	//printf("Neighbor: \nChannel: %u, Seconds: %u, Ticks: %u\nLocal:\nTicks: %u, Seconds: %u, Ticks: %u\n\n", channel, neighbor_time_seconds, neighbor_time_ticks_acc, RTIMER_NOW(), clock_seconds());
 	return neighbor_channel;
 }
@@ -175,7 +233,7 @@ powercycle(struct rtimer *t, void *ptr)
 
 		// unicast slot end
 		turn_off();
-		rtimer_set(t, timesynch_time_to_rtimer(get_rand_num(1)%RTIMER_SECOND + RTIMER_SECOND/2), 0, (rtimer_callback_t)powercycle, NULL);
+		rtimer_set(t, timesynch_time_to_rtimer(get_rand_num()%RTIMER_SECOND + RTIMER_SECOND/2), 0, (rtimer_callback_t)powercycle, NULL);
 		PT_YIELD(&pt);
 	}
 
@@ -266,7 +324,10 @@ send(mac_callback_t sent_callback, void *ptr)
 		switch (NETSTACK_RADIO.send(packetbuf_hdrptr(), packetbuf_totlen())) {
 		case RADIO_TX_OK:
 			ret = MAC_TX_OK;
-			break;
+			break;static int channel;
+			static int unvisited_channels;
+			static int *channel_list;
+			static int *channel_list_copy;
 		case RADIO_TX_COLLISION:
 			ret = MAC_TX_COLLISION;
 			break;
@@ -376,12 +437,16 @@ init(void)
 	unvisited_channels=16;
 	channel_list = (int*)malloc(16*sizeof(int));
 	channel_list_copy = (int*)malloc(16*sizeof(int));
-	/*printf("unvisited channels (%d) before: ", 16*sizeof(int));
+	unvisited_channels_n=16;
+	channel_list_n = (int*)malloc(16*sizeof(int));
+	channel_list_copy_n = (int*)malloc(16*sizeof(int));
+	printf("Channel Lists initialized!!!\n\n");
 	for (i=0; i<16; i++){
 		channel_list[i]=i+11;
-		printf("%d ", channel_list[i]);
 	}
-	printf("\n");*/
+	for (i=0; i<16; i++){
+		channel_list_n[i]=i+11;
+	}
 
 	memb_init(&muchmac_queue_memb);
 	list_init(muchmac_queue_unicast);
