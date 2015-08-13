@@ -316,7 +316,7 @@ int packetbuf_hdrreduce(int size);
 
 /* Packet attributes stuff below: */
 
-typedef uint16_t packetbuf_attr_t;
+typedef unsigned int packetbuf_attr_t;
 
 struct packetbuf_attr {
 /*   uint8_t type; */
@@ -333,6 +333,9 @@ struct packetbuf_addr {
 #define PACKETBUF_ATTR_PACKET_TYPE_STREAM_END 3
 #define PACKETBUF_ATTR_PACKET_TYPE_TIMESTAMP 4
 
+#define PACKETBUF_ATTR_FRAME_TYPE_BEACON 0
+#define PACKETBUF_ATTR_FRAME_TYPE_DATA 1
+#define PACKETBUF_ATTR_FRAME_TYPE_ACK 3
 enum {
   PACKETBUF_ATTR_NONE,
 
@@ -349,11 +352,21 @@ enum {
   PACKETBUF_ATTR_MAC_SEQNO,
   PACKETBUF_ATTR_MAC_ACK,
   PACKETBUF_ATTR_IS_CREATED_AND_SECURED,
-  
+  PACKETBUF_ATTR_DELAY,                         //Especifico de EM-MAC
+  PACKETBUF_ATTR_DELAY_AUX,                     //Especifico de EM-MAC
   /* Scope 1 attributes: used between two neighbors only. */
   PACKETBUF_ATTR_RELIABLE,
   PACKETBUF_ATTR_PACKET_ID,
   PACKETBUF_ATTR_PACKET_TYPE,
+  PACKETBUF_ATTR_NODE_RADIO_TIMESTAMP,              //Especifico de EM-MAC
+  PACKETBUF_ATTR_NODE_RADIO_TIMESTAMP_FLAG,         //Especifico de EM-MAC
+  PACKETBUF_ATTR_NODE_TIMESTAMP, 					//Especifico de EM-MAC
+  PACKETBUF_ATTR_NODE_CLOCK_TIME,                    //Especifico de EM-MAC
+  PACKETBUF_ATTR_NODE_RAND_SEED, 					//Especifico de EM-MAC
+  PACKETBUF_ATTR_NODE_BLACKLIST, 					//Especifico de EM-MAC
+  PACKETBUF_ATTR_NODE_TIMESTAMP_FLAG,               //Especifico de EM-MAC
+  PACKETBUF_ATTR_NODE_RAND_SEED_FLAG,               //Especifico de EM-MAC
+  PACKETBUF_ATTR_NODE_STATE_FLAG, 					//Especifico de EM-MAC
 #if NETSTACK_CONF_WITH_RIME
   PACKETBUF_ATTR_REXMIT,
   PACKETBUF_ATTR_MAX_REXMIT,

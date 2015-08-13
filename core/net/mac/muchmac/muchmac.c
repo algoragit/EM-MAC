@@ -33,9 +33,13 @@ static int unvisited_channels_n;
 static int *channel_list_n;
 static int *channel_list_copy_n;
 static unsigned int rand_num;
-static unsigned int rand_num_neighbor;
+static unsigned int rand_num_neighbor_hist[4];
 static int multiplier=15213;
 static int increment=11237;
+static unsigned int neighbor_time_seconds_hist[4]={0};
+static unsigned int neighbor_time_ticks_acc_hist[4]={0};
+static unsigned int neighbor_time_ticks_temp;
+static int neighbor_first=1;
 
 // queue
 struct muchmac_queue_item {
@@ -80,10 +84,10 @@ get_rand_num()
 		rand_num = (linkaddr_node_addr.u8[0])*multiplier+increment;
 		first_time=0;
 	}
-	linkaddr_t dest;
+	/*linkaddr_t dest;
 	dest.u8[0]=2;
 	get_neighbor_channel_and_time(&dest.u8[0]);
-	printf("\n\n%d\n", dest.u8[0]);
+	printf("\n\n%d\n", dest.u8[0]);*/
 	//get_channel(rand_num);
 	//printf("Random number generated: %u\n", rand_num);
 
@@ -125,6 +129,9 @@ int get_channel(unsigned int random4chan){
 		channel_list=channel_list_copy;
 	}
 	//printf("Channel from get_channel: %d from random4chan: %u\n", channel, random4chan);
+	/*if (channel==11){
+		leds_toggle(LEDS_BLUE);
+	}*/
 	return channel;
 }
 
@@ -166,29 +173,32 @@ int get_neighbor_channel(unsigned int random4chan){
 	return channel_n;
 }
 
-int
+/*int
 get_neighbor_channel_and_time(const linkaddr_t *addr)
 {
 	// The first random number generated for each node is used to generate the first wake-up channel.
 	int neighbor_channel;
+	int pre_neighbor_channel[3]={0,0,0};
+	unsigned int rand_num_neighbor=(addr->u8[0])*multiplier+increment;
 	rand_num_neighbor=(addr->u8[0])*multiplier+increment;
-	printf("rand_num_neighbor (0): %u, ", rand_num_neighbor);
-	neighbor_channel=get_neighbor_channel(rand_num_neighbor);
-	printf("neighbor_channel (0): %u\n", neighbor_channel);
+	//neighbor_channel=get_neighbor_channel(rand_num_neighbor);
 	int i;
 	unsigned int neighbor_time_seconds=0;
-	unsigned int neighbor_time_ticks_acc=rand_num_neighbor;
-	unsigned int neighbor_time_ticks_temp=0;
-	int local_seconds = clock_seconds();
-	while (local_seconds+1 > neighbor_time_seconds){
+	unsigned int neighbor_time_ticks_acc=rand_num_neighbor%RTIMER_SECOND + RTIMER_SECOND/2;
+	int local_seconds = clock_seconds() - 30; // (-30) because of the interval before starting to powercycle defined in init() function
+	while (local_seconds > neighbor_time_seconds){
+	//while ((neighbor_time_seconds-local_seconds)*RTIMER_SECOND+neighbor_time_ticks_acc > RTIMER_NOW()){
+		if (linkaddr_node_addr.u8[0] == 2){
+			printf("Random4Channel: %u, ", rand_num_neighbor);
+		}
+		neighbor_channel=get_neighbor_channel(rand_num_neighbor);
 		rand_num_neighbor=rand_num_neighbor*multiplier+increment;
-		printf("rand_num_neighbor (1): %u\n", rand_num_neighbor);
-		neighbor_time_ticks_temp=rand_num_neighbor;  // We must use the same expression used in the powercycle() function (NOT DONE)
+		neighbor_time_ticks_temp=rand_num_neighbor%RTIMER_SECOND + RTIMER_SECOND/2;  // We must use the same expression used in the powercycle() function
 		// Adding next wake-up interval
-		if (((neighbor_time_ticks_temp/2) + (neighbor_time_ticks_acc/2)) > (RTIMER_SECOND)){
+		if (((neighbor_time_ticks_temp/2) + (neighbor_time_ticks_acc/2)) > RTIMER_SECOND){
 			neighbor_time_ticks_acc = (neighbor_time_ticks_temp/2 + neighbor_time_ticks_acc/2) % RTIMER_SECOND;
 			neighbor_time_seconds += 2;
-		}else if (((neighbor_time_ticks_temp) + (neighbor_time_ticks_acc)) > (RTIMER_SECOND)){
+		}else if ((neighbor_time_ticks_temp + neighbor_time_ticks_acc) > RTIMER_SECOND){
 			neighbor_time_ticks_acc=(neighbor_time_ticks_temp + neighbor_time_ticks_acc) % RTIMER_SECOND;
 			neighbor_time_seconds++;
 		}else{
@@ -201,16 +211,174 @@ get_neighbor_channel_and_time(const linkaddr_t *addr)
 		}else {
 			neighbor_time_ticks_acc += ON_PERIOD;
 		}
-		//rand_num_neighbor[1]=rand_num_neighbor[0];
+		if (linkaddr_node_addr.u8[0] == 2){
+			printf("Channel: %d, Time: %u      ", neighbor_channel, neighbor_time_ticks_temp);
+			printf("Predicted: Ticks: %u, Seconds: %d    ", neighbor_time_ticks_acc, neighbor_time_seconds);
+			printf("Local    : Ticks: %u, Seconds: %d\n", RTIMER_NOW()%RTIMER_SECOND, local_seconds);
+		}
 		rand_num_neighbor=rand_num_neighbor*multiplier+increment;
-		printf("rand_num_neighbor (2): %u, ", rand_num_neighbor);
-		neighbor_channel=get_neighbor_channel(rand_num_neighbor);
-		printf("neighbor_channel (2): %u\n", neighbor_channel);
+		//printf("neighbor_channel sequence: %d %d %d %d\n", pre_neighbor_channel[0], pre_neighbor_channel[1], pre_neighbor_channel[2], neighbor_channel);
+
+		pre_neighbor_channel[0]=pre_neighbor_channel[1];
+		pre_neighbor_channel[1]=pre_neighbor_channel[2];
+		pre_neighbor_channel[2]=neighbor_channel;
+
+		//printf("neighbor_channel: %u\n", neighbor_channel);
 	}
+	//printf("neighbor_channel sequence: %d %d %d %d\n", pre_neighbor_channel[0], pre_neighbor_channel[1], pre_neighbor_channel[2], neighbor_channel);
+	//printf("neighbor_channel: %u\n", neighbor_channel);
+	//unsigned int local_ticks=RTIMER_NOW();
+	//int local_seconds2print = clock_seconds();
+	//printf("Predicted: Ticks: %u, Seconds: %d\n", neighbor_time_ticks_acc, neighbor_time_seconds+30);
+	//printf("Local    : Ticks: %u, Seconds: %d\n", local_ticks%RTIMER_SECOND, local_seconds2print);
+	//printf("Diff     : Ticks: %u, Seconds: %d, TimeDifference: %u\n\n", local_ticks-neighbor_time_ticks_acc, neighbor_time_seconds+30-local_seconds2print, (neighbor_time_seconds+30-local_seconds2print)*RTIMER_SECOND+neighbor_time_ticks_acc);
 	unvisited_channels_n=16;
 	for (i=0; i<16; i++){
 		channel_list_n[i]=i+11;
 	}
+	//printf("Neighbor: \nChannel: %u, Seconds: %u, Ticks: %u\nLocal:\nTicks: %u, Seconds: %u, Ticks: %u\n\n", channel, neighbor_time_seconds, neighbor_time_ticks_acc, RTIMER_NOW(), clock_seconds());
+	return neighbor_channel;
+}*/
+
+int
+get_neighbor_channel_and_time(const linkaddr_t *addr)
+{
+	// The first random number generated for each node is used to generate the first wake-up channel.
+	int neighbor_channel;
+	int pre_neighbor_channel[3]={0,0,0};
+	int rand_temp=0;
+	int i=0;
+	int local_seconds = clock_seconds() - 30; // (-30) because of the interval before starting to powercycle defined in init() function
+	unsigned int neighbor_time_ticks_acc=0;
+	unsigned int rand_num_neighbor=(addr->u8[0])*multiplier+increment;
+	unsigned int neighbor_time_seconds=0;
+	rand_num_neighbor_hist[3]=rand_num_neighbor;
+	if (neighbor_first==1){
+		while (i<3){
+			if (linkaddr_node_addr.u8[0] == 2){
+				printf("Random4Channel: %u, ", rand_num_neighbor);
+			}
+			neighbor_channel=get_neighbor_channel(rand_num_neighbor);
+			rand_num_neighbor=rand_num_neighbor*multiplier+increment;
+			neighbor_time_ticks_temp=rand_num_neighbor%RTIMER_SECOND + RTIMER_SECOND/2;  // We must use the same expression used in the powercycle() function
+			// Adding next wake-up interval
+			if (((neighbor_time_ticks_temp/2) + (neighbor_time_ticks_acc/2)) > RTIMER_SECOND){
+				neighbor_time_ticks_acc = (neighbor_time_ticks_temp/2 + neighbor_time_ticks_acc/2) % RTIMER_SECOND;
+				neighbor_time_seconds += 2;
+			}else if ((neighbor_time_ticks_temp + neighbor_time_ticks_acc) > RTIMER_SECOND){
+				neighbor_time_ticks_acc=(neighbor_time_ticks_temp + neighbor_time_ticks_acc) % RTIMER_SECOND;
+				neighbor_time_seconds++;
+			}else{
+				neighbor_time_ticks_acc += neighbor_time_ticks_temp;
+			}
+			// Adding the time spent awake by the node
+			if ((neighbor_time_ticks_acc + ON_PERIOD) > RTIMER_SECOND){
+				neighbor_time_ticks_acc = (neighbor_time_ticks_acc + ON_PERIOD)%RTIMER_SECOND;
+				neighbor_time_seconds++;
+			}else {
+				neighbor_time_ticks_acc += ON_PERIOD;
+			}
+			if (linkaddr_node_addr.u8[0] == 2){
+				printf("Channel: %d, Time: %u      ", neighbor_channel, neighbor_time_ticks_temp);
+				printf("Predicted: Ticks: %u, Seconds: %d    ", neighbor_time_ticks_acc, neighbor_time_seconds);
+				printf("Local    : Ticks: %u, Seconds: %d\n", RTIMER_NOW()%RTIMER_SECOND, local_seconds);
+			}
+			rand_num_neighbor=rand_num_neighbor*multiplier+increment;
+			//printf("neighbor_channel sequence: %d %d %d %d\n", pre_neighbor_channel[0], pre_neighbor_channel[1], pre_neighbor_channel[2], neighbor_channel);
+
+			pre_neighbor_channel[0]=pre_neighbor_channel[1];
+			pre_neighbor_channel[1]=pre_neighbor_channel[2];
+			pre_neighbor_channel[2]=neighbor_channel;
+
+			neighbor_time_ticks_acc_hist[0]=neighbor_time_ticks_acc_hist[1];
+			neighbor_time_ticks_acc_hist[1]=neighbor_time_ticks_acc_hist[2];
+			neighbor_time_ticks_acc_hist[2]=neighbor_time_ticks_acc_hist[3];
+			neighbor_time_ticks_acc_hist[3]=neighbor_time_ticks_acc;
+			rand_num_neighbor_hist[0]=rand_num_neighbor_hist[1];
+			rand_num_neighbor_hist[1]=rand_num_neighbor_hist[2];
+			rand_num_neighbor_hist[2]=rand_num_neighbor_hist[3];
+			rand_num_neighbor_hist[3]=rand_num_neighbor;
+			neighbor_time_seconds_hist[0]=neighbor_time_seconds_hist[1];
+			neighbor_time_seconds_hist[1]=neighbor_time_seconds_hist[2];
+			neighbor_time_seconds_hist[2]=neighbor_time_seconds_hist[3];
+			neighbor_time_seconds_hist[3]=neighbor_time_seconds;
+			i++;
+		}
+		printf("... First time: [0]: %u, [1]: %u, [2]: %u, [3]: %u\n", rand_num_neighbor_hist[0], rand_num_neighbor_hist[1], rand_num_neighbor_hist[2], rand_num_neighbor_hist[3]);
+		neighbor_first=0;
+		unvisited_channels_n=16;
+		for (i=0; i<16; i++){
+			channel_list_n[i]=i+11;
+		}
+		//neighbor_time_ticks_acc_hist[0]=rand_num_neighbor_hist[0]%RTIMER_SECOND + RTIMER_SECOND/2;
+	}
+	neighbor_time_ticks_acc=neighbor_time_ticks_acc_hist[0];
+	rand_num_neighbor=rand_num_neighbor_hist[0];
+	neighbor_time_seconds=neighbor_time_seconds_hist[0];
+	printf("... At loop startup: Seconds: %u, Ticks: %u, Rand_num: %u\n", neighbor_time_seconds, neighbor_time_ticks_acc, rand_num_neighbor);
+	int picked_channels=0;
+	while (local_seconds > neighbor_time_seconds){
+		printf("unvisited_channels_n: %d\n", unvisited_channels_n);
+	//while ((neighbor_time_seconds-local_seconds)*RTIMER_SECOND+neighbor_time_ticks_acc > RTIMER_NOW()){
+		if (linkaddr_node_addr.u8[0] == 2){
+			printf("Random4Channel: %u, ", rand_num_neighbor);
+		}
+		neighbor_channel=get_neighbor_channel(rand_num_neighbor);
+		picked_channels++;
+		rand_num_neighbor=rand_num_neighbor*multiplier+increment;
+		neighbor_time_ticks_temp=rand_num_neighbor%RTIMER_SECOND + RTIMER_SECOND/2;  // We must use the same expression used in the powercycle() function
+		// Adding next wake-up interval
+		if (((neighbor_time_ticks_temp/2) + (neighbor_time_ticks_acc/2)) > RTIMER_SECOND){
+			neighbor_time_ticks_acc = (neighbor_time_ticks_temp/2 + neighbor_time_ticks_acc/2) % RTIMER_SECOND;
+			neighbor_time_seconds += 2;
+		}else if ((neighbor_time_ticks_temp + neighbor_time_ticks_acc) > RTIMER_SECOND){
+			neighbor_time_ticks_acc=(neighbor_time_ticks_temp + neighbor_time_ticks_acc) % RTIMER_SECOND;
+			neighbor_time_seconds++;
+		}else{
+			neighbor_time_ticks_acc += neighbor_time_ticks_temp;
+		}
+		// Adding the time spent awake by the node
+		if ((neighbor_time_ticks_acc + ON_PERIOD) > RTIMER_SECOND){
+			neighbor_time_ticks_acc = (neighbor_time_ticks_acc + ON_PERIOD)%RTIMER_SECOND;
+			neighbor_time_seconds++;
+		}else {
+			neighbor_time_ticks_acc += ON_PERIOD;
+		}
+		if (linkaddr_node_addr.u8[0] == 2){
+			printf("Channel: %d, Time: %u      ", neighbor_channel, neighbor_time_ticks_temp);
+			printf("Predicted: Ticks: %u, Seconds: %d    ", neighbor_time_ticks_acc, neighbor_time_seconds);
+			printf("Local    : Ticks: %u, Seconds: %d\n", RTIMER_NOW()%RTIMER_SECOND, local_seconds);
+		}
+		rand_num_neighbor=rand_num_neighbor*multiplier+increment;
+		//printf("neighbor_channel sequence: %d %d %d %d\n", pre_neighbor_channel[0], pre_neighbor_channel[1], pre_neighbor_channel[2], neighbor_channel);
+
+		pre_neighbor_channel[0]=pre_neighbor_channel[1];
+		pre_neighbor_channel[1]=pre_neighbor_channel[2];
+		pre_neighbor_channel[2]=neighbor_channel;
+
+		neighbor_time_ticks_acc_hist[0]=neighbor_time_ticks_acc_hist[1];
+		neighbor_time_ticks_acc_hist[1]=neighbor_time_ticks_acc_hist[2];
+		neighbor_time_ticks_acc_hist[2]=neighbor_time_ticks_acc_hist[3];
+		neighbor_time_ticks_acc_hist[3]=neighbor_time_ticks_acc;
+		rand_num_neighbor_hist[0]=rand_num_neighbor_hist[1];
+		rand_num_neighbor_hist[1]=rand_num_neighbor_hist[2];
+		rand_num_neighbor_hist[2]=rand_num_neighbor_hist[3];
+		rand_num_neighbor_hist[3]=rand_num_neighbor;
+		neighbor_time_seconds_hist[0]=neighbor_time_seconds_hist[1];
+		neighbor_time_seconds_hist[1]=neighbor_time_seconds_hist[2];
+		neighbor_time_seconds_hist[2]=neighbor_time_seconds_hist[3];
+		neighbor_time_seconds_hist[3]=neighbor_time_seconds;
+
+		//printf("neighbor_channel: %u\n", neighbor_channel);
+	}
+	unvisited_channels_n=unvisited_channels_n+picked_channels-1;
+	for (i=0; i<unvisited_channels_n; i++){
+		channel_list_n[i]=i+11;
+	}
+	/*unvisited_channels_n=16;
+	for (i=0; i<16; i++){
+		channel_list_n[i]=i+11;
+	}*/
 	//printf("Neighbor: \nChannel: %u, Seconds: %u, Ticks: %u\nLocal:\nTicks: %u, Seconds: %u, Ticks: %u\n\n", channel, neighbor_time_seconds, neighbor_time_ticks_acc, RTIMER_NOW(), clock_seconds());
 	return neighbor_channel;
 }
@@ -221,10 +389,22 @@ powercycle(struct rtimer *t, void *ptr)
 	PT_BEGIN(&pt);
 
 	while (1) {
-		channel = get_channel(get_rand_num(&linkaddr_node_addr));
+		//printf("RTIMER_NOW(Change): %u\n", RTIMER_NOW());
+		int rand_num_local=get_rand_num(&linkaddr_node_addr);
+		channel = get_channel(rand_num_local);
+		if (linkaddr_node_addr.u8[0] == 2){
+			linkaddr_t dest;
+			dest.u8[0]=3;
+			channel = get_neighbor_channel_and_time(&dest.u8[0]);
+		}
+		if (linkaddr_node_addr.u8[0] == 3){
+			printf("\nRandom local: %u\n", rand_num_local);
+			printf("Channel local: %u\n", channel);
+		}
 		NETSTACK_RADIO.set_value(RADIO_PARAM_CHANNEL, channel);
 		//printf("Channel: %u Node number: %d\n", channel, linkaddr_node_addr.u8[0]);
-		turn_on();
+
+		//printf("\n%d", dest.u8[0]);channel
 		if (list_tail(muchmac_queue_unicast) != NULL) {
 			process_poll(&send_packet);
 		}
@@ -232,8 +412,18 @@ powercycle(struct rtimer *t, void *ptr)
 		PT_YIELD(&pt);
 
 		// unicast slot end
-		turn_off();
-		rtimer_set(t, timesynch_time_to_rtimer(get_rand_num()%RTIMER_SECOND + RTIMER_SECOND/2), 0, (rtimer_callback_t)powercycle, NULL);
+		//turn_off();
+		unsigned int random_time_to_wake;
+		if (linkaddr_node_addr.u8[0] == 2){
+			random_time_to_wake=neighbor_time_ticks_temp;
+		}else{
+			random_time_to_wake=get_rand_num() % RTIMER_SECOND + RTIMER_SECOND/2;
+		}
+		//rtimer_set(t, timesynch_time_to_rtimer(random_time_to_wake), 0, (rtimer_callback_t)powercycle, NULL);
+		//rtimer_set(t, RTIMER_NOW()+timesynch_time_to_rtimer(random_time_to_wake), 0, (rtimer_callback_t)powercycle, NULL);
+		rtimer_set(t, RTIMER_NOW()+random_time_to_wake, 0, (rtimer_callback_t)powercycle, NULL);
+		printf("time_to_wake: %u\n", random_time_to_wake);
+		//printf("RTIMER_NOW(Schedule): %u\n", RTIMER_NOW());
 		PT_YIELD(&pt);
 	}
 
@@ -324,10 +514,7 @@ send(mac_callback_t sent_callback, void *ptr)
 		switch (NETSTACK_RADIO.send(packetbuf_hdrptr(), packetbuf_totlen())) {
 		case RADIO_TX_OK:
 			ret = MAC_TX_OK;
-			break;static int channel;
-			static int unvisited_channels;
-			static int *channel_list;
-			static int *channel_list_copy;
+			break;
 		case RADIO_TX_COLLISION:
 			ret = MAC_TX_COLLISION;
 			break;
@@ -424,7 +611,7 @@ static void
 start_tdma(void *ptr)
 {
 	PRINTF("muchmac: starting TDMA mode\n");
-	rtimer_set(&rt, timesynch_time_to_rtimer(0), 0, (rtimer_callback_t)powercycle, NULL);
+	rtimer_set(&rt, /*timesynch_time_to_rtimer(0)*/0, 0, (rtimer_callback_t)powercycle, NULL);
 }
 
 static void
@@ -434,6 +621,9 @@ init(void)
 
 	PT_INIT(&pt);
 	int i;
+	/*while (i<60000){
+		printf("Ticks: %u, Seconds: %u\n",RTIMER_NOW(), clock_seconds());
+	}*/
 	unvisited_channels=16;
 	channel_list = (int*)malloc(16*sizeof(int));
 	channel_list_copy = (int*)malloc(16*sizeof(int));

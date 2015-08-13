@@ -136,28 +136,28 @@ force_inclusion(int d1, int d2)
 static void
 set_rime_addr(void)
 {
-  linkaddr_t addr;
-  int i;
+	 linkaddr_t addr;
+	  int i;
 
-  memset(&addr, 0, sizeof(linkaddr_t));
-#if NETSTACK_CONF_WITH_IPV6
-  memcpy(addr.u8, node_mac, sizeof(addr.u8));
-#else
-  if(node_id == 0) {
-    for(i = 0; i < sizeof(linkaddr_t); ++i) {
-      addr.u8[i] = node_mac[7 - i];
-    }
-  } else {
-    addr.u8[0] = node_id & 0xff;
-    addr.u8[1] = node_id >> 8;
-  }
-#endif
-  linkaddr_set_node_addr(&addr);
-  printf("Rime started with address ");
-  for(i = 0; i < sizeof(addr.u8) - 1; i++) {
-    printf("%d.", addr.u8[i]);
-  }
-  printf("%d\n", addr.u8[i]);
+	  memset(&addr, 0, sizeof(linkaddr_t));
+	#if NETSTACK_CONF_WITH_IPV6
+	  memcpy(addr.u8, node_mac, sizeof(addr.u8));
+	#else
+	  if(node_id == 0) {
+	    for(i = 0; i < sizeof(linkaddr_t); ++i) {
+	      addr.u8[i] = node_mac[7 - i];
+	    }
+	  } else {
+	    addr.u8[0] = node_id & 0xff;
+	    addr.u8[1] = node_id >> 8;
+	  }
+	#endif
+	  linkaddr_set_node_addr(&addr);
+	  printf("Rime started with address ");
+	  for(i = 0; i < sizeof(addr.u8) - 1; i++) {
+	    printf("%d.", addr.u8[i]);
+	  }
+	  printf("%d\n", addr.u8[i]);
 }
 /*---------------------------------------------------------------------------*/
 static void
@@ -275,7 +275,7 @@ main(int argc, char **argv)
 
   init_platform();
 
-  set_rime_addr();
+  set_rime_addr();//Rime address and MAC address are the same when we work with sicslowpan
 
   cc2420_init();
   accm_init();
@@ -287,7 +287,7 @@ main(int argc, char **argv)
     shortaddr = (linkaddr_node_addr.u8[0] << 8) +
       linkaddr_node_addr.u8[1];
     memset(longaddr, 0, sizeof(longaddr));
-    linkaddr_copy((linkaddr_t *)&longaddr, &linkaddr_node_addr);
+    linkaddr_copy((linkaddr_t *)&longaddr, &linkaddr_node_addr);//Copying a Rime address into a MAC address
     printf("MAC %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x ",
            longaddr[0], longaddr[1], longaddr[2], longaddr[3],
            longaddr[4], longaddr[5], longaddr[6], longaddr[7]);
@@ -321,9 +321,11 @@ main(int argc, char **argv)
   NETSTACK_MAC.init();
   NETSTACK_NETWORK.init();
 
-  printf("%s %s, channel check rate %lu Hz, radio channel %u\n",
-         NETSTACK_MAC.name, NETSTACK_RDC.name,
-         CLOCK_SECOND / (NETSTACK_RDC.channel_check_interval() == 0 ? 1 :
+  printf("Network_driver: %s\n",NETSTACK_NETWORK.name);
+  printf("MAC_driver: %s\n",NETSTACK_MAC.name);
+  printf("RDC_driver: %s\n",NETSTACK_RDC.name);
+  printf("channel check rate %lu Hz, radio channel %u\n",
+          CLOCK_SECOND / (NETSTACK_RDC.channel_check_interval() == 0 ? 1 :
                          NETSTACK_RDC.channel_check_interval()),
          CC2420_CONF_CHANNEL);
 

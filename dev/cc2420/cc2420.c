@@ -657,11 +657,14 @@ cc2420_transmit(unsigned short payload_len)
     if(CC2420_SFD_IS_1) {
       {
         rtimer_clock_t sfd_timestamp;
-        sfd_timestamp = cc2420_sfd_start_time;
+        sfd_timestamp = RTIMER_NOW();
         if(packetbuf_attr(PACKETBUF_ATTR_PACKET_TYPE) ==
-           PACKETBUF_ATTR_PACKET_TYPE_TIMESTAMP) {
+           PACKETBUF_ATTR_PACKET_TYPE_TIMESTAMP ||
+           packetbuf_attr(PACKETBUF_ATTR_NODE_RADIO_TIMESTAMP_FLAG) ==1)
+            {
           /* Write timestamp to last two bytes of packet in TXFIFO. */
           write_ram((uint8_t *) &sfd_timestamp, CC2420RAM_TXFIFO + payload_len - 1, 2, WRITE_RAM_IN_ORDER);
+          printf("Sender timestamp: %u\n", sfd_timestamp);
         }
       }
 
@@ -855,7 +858,7 @@ cc2420_interrupt(void)
   CC2420_CLEAR_FIFOP_INT();
   process_poll(&cc2420_process);
 
-  last_packet_timestamp = cc2420_sfd_start_time;
+
   return 1;
 }
 /*---------------------------------------------------------------------------*/
@@ -872,7 +875,6 @@ PROCESS_THREAD(cc2420_process, ev, data)
     PRINTF("cc2420_process: calling receiver callback\n");
 
     packetbuf_clear();
-    packetbuf_set_attr(PACKETBUF_ATTR_TIMESTAMP, last_packet_timestamp);
     len = cc2420_read(packetbuf_dataptr(), PACKETBUF_SIZE);
     
     packetbuf_set_datalen(len);
@@ -939,7 +941,7 @@ cc2420_read(void *buf, unsigned short bufsize)
   
   flushrx();
   RELEASE_LOCK();
-  return 0;
+  return len;
 }
 /*---------------------------------------------------------------------------*/
 void

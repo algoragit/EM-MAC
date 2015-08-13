@@ -73,6 +73,15 @@ static uint8_t *packetbufptr;
 #endif
 
 /*---------------------------------------------------------------------------*/
+void set_hdrptr(unsigned int value)
+{
+	hdrptr=value;
+}
+unsigned int ret_hdrptr(void)
+{
+	return hdrptr;
+}
+
 void
 packetbuf_clear(void)
 {
@@ -245,7 +254,7 @@ uint8_t
 packetbuf_hdrlen(void)
 {
   uint8_t hdrlen;
-  
+
   hdrlen = PACKETBUF_HDR_SIZE - hdrptr;
   if(hdrlen) {
     /* outbound packet */

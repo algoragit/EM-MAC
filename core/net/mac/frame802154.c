@@ -185,7 +185,8 @@ frame802154_hdrlen(frame802154_t *p)
 int
 frame802154_create(frame802154_t *p, uint8_t *buf)
 {
-  int c;
+	 //printf ("LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL");
+	int c;
   field_length_t flen;
   uint8_t pos;
 #if LLSEC802154_USES_EXPLICIT_KEYS
