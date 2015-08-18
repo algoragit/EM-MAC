@@ -1,6 +1,7 @@
 
 #include "net/netstack.h"
 #include "net/mac/EM-MAC/LCG.h"
+#include "sys/rtimer.h"
 unsigned int next_channel( unsigned int initial_seed, unsigned short cycle_num)
 {
    unsigned int div;
@@ -24,21 +25,11 @@ unsigned int next_channel( unsigned int initial_seed, unsigned short cycle_num)
    res=res-chann_min;}
    return res;
 }
-unsigned int get_rand_wake_up_time( unsigned int initial_seed, unsigned short cycle_num)
+unsigned int get_rand_wake_up_time( unsigned int current_seed)
 {
-	   unsigned int time_min=8192;  //tics equivalent to 0.5ms
-	   unsigned int time_max=24575; //tics equivalent to 1.5ms
-	   unsigned int i;
-	   unsigned int res=initial_seed;
-	   for(i=0;i<cycle_num;i++)
-	   {
-		   res=(15213*res)+11237;
-	   }
-	   res=res/2;
-	   if(res<time_min){
-	      res=res+time_min;}
-	      else if(res>time_max){
-	      res=res-time_min;}
-	      return res;
+	   unsigned int next_seed;
+	   next_seed=((15213*current_seed)+11237)%RTIMER_SECOND + RTIMER_SECOND/2;
+	   printf("Next_seed: %u\n", next_seed);
+	   return next_seed;
 }
 

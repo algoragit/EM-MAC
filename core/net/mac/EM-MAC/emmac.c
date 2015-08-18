@@ -34,8 +34,8 @@
  * \file
  *         A null RDC implementation that uses framer for headers.
  * \author
- *         Adam Dunkels <adam@sics.se>
- *         Niclas Finne <nfi@sics.se>
+ *         Carlos M. García-Algora <cgalgora@uclv.edu.cu>
+ *         Ernesto López-Prieto <eplopez@uclv.cu>
  */
 #include "contiki-conf.h"
 #include "net/mac/mac-sequence.h"
@@ -67,17 +67,12 @@
 #define DATA_PACKET_WAIT_TIME               RTIMER_SECOND / 625
 //Values of the reception state
 
-enum{
-	Reciever_mode,
-	Transmiter_mode,
-};
-
+static struct pt pt;
 static struct rtimer reciever_powercycle_timer;
 static struct timer w;
 static unsigned int initial_rand_seed;
 static unsigned int blacklist;
 static unsigned short ack_len;
-static unsigned short radio_mode;
 static unsigned short neighbor_discovery_flag;
 static unsigned int cycle_num;
 static unsigned int w_up_time;
@@ -141,7 +136,7 @@ static void neighbor_discovery(void)
 
 			wt=RTIMER_NOW();
 
-			/*Si se cumple que estamos recibiendo un poaquete o hay un paquete recibido pendiente a ser leido o hay un paquete
+			/*Si se cumple que estamos recibiendo un paquete o hay un paquete recibido pendiente a ser leido o hay un paquete
 			 * en el aire entonces esperamos un tiempo AFTER_ACK_DETECTED_WAIT_TIME luego del cual leemos el paquete*/
 
 			while(RTIMER_CLOCK_LT(RTIMER_NOW(), wt + AFTER_ACK_DETECTED_WAIT_TIME)) {} /*Mientras que RTIMER_NOW() sea menor que wt + AFTER_ACK_DETECTED_WAIT_TIME. */
@@ -190,42 +185,35 @@ static void neighbor_discovery(void)
 		}
 		/*Si el temporizador ha expirado hacemos neighbor_discovery_flag=0 luego de lo cual salimos del proceso
 		 * de descubrimiento de vecinos*/
-
 		if(timer_expired(&w)){
 			neighbor_discovery_flag=0;
-
-
 		}
 	}
 
 }
 /******************************************************************************/
 /*La siguiente funcion se usa para controlar el ciclo util de radio*/
-static void reception_powercycle(void)
+static char reception_powercycle(void)
 {
 	rtimer_clock_t wt;
-	if(radio_mode==Reciever_mode)
-	{
-
-		radio_mode=Transmiter_mode;
+	PT_BEGIN(&pt);
+	while (1){
 		cycle_num++;
-		rtimer_set(&reciever_powercycle_timer,(w_up_time+get_rand_wake_up_time(initial_rand_seed, cycle_num)), 0,(void (*)(struct rtimer *, void *))reception_powercycle,NULL);
-	}
-	else
-	{
-		radio_mode=Reciever_mode;
+		initial_rand_seed=get_rand_wake_up_time(initial_rand_seed);
+		rtimer_set(&reciever_powercycle_timer,(w_up_time+initial_rand_seed), 0,(void (*)(struct rtimer *, void *))reception_powercycle,NULL);
+		PT_YIELD(&pt);
+
+		/* Turn on the radio interface */
 		if(check_if_radio_on()==0){
 			on();}
-		/*Aqui el radio se despierta para recibir y por lo tanto se establecen los valores de wake up time en tics y en segundos.
-		 * Dichos valores seran transmitidos en los ACK cuando se reciba un paquete de datos con la bandera de estado en 1*/
-
+		/* Save the timestamps (in tics and in seconds) of the last wake-up,
+		 * which will be transmitted when the state is requested through an ACK */
 		w_up_time=RTIMER_NOW();
 		time_in_seconds=clock_seconds();
-
+		/* TODO: Get the blacklist and embed it into the beacon. Now, the value for the blacklist is fixed to 100 */
 		packetbuf_set_attr(PACKETBUF_ATTR_NODE_BLACKLIST, 100);
-
 		blacklist=packetbuf_attr(PACKETBUF_ATTR_NODE_BLACKLIST);
-		/*Se crea el beacon y se transmite*/
+		/* Create beacon and transmit it */
 		uint8_t beacon_data[12] = {0,0,0,0,0,0,0,0,0,0,0};
 		beacon_data[0]=FRAME802154_BEACONFRAME;
 		beacon_data[1]=0;
@@ -240,19 +228,19 @@ static void reception_powercycle(void)
 		beacon_data[10]=linkaddr_node_addr.u8[6];
 		beacon_data[11]=linkaddr_node_addr.u8[7];
 		NETSTACK_RADIO.send(beacon_data, 12);
-
+		/* After a beacon is sent, wait for DATA_PACKET_WAITING_TIME period */
 		wt = RTIMER_NOW();
-		/*Se espera un corto periodo de tiempo para esperar por una posible transmision
-		 * Si en dicho periodo no se recibe ningun paquete el radio se apaga*/
-
 		while(RTIMER_CLOCK_LT(RTIMER_NOW(), wt + DATA_PACKET_WAIT_TIME)) {}
+		/* Check if a packet was received */
 		while(NETSTACK_RADIO.receiving_packet() ||
 				NETSTACK_RADIO.channel_clear() == 0){}
+		/* TODO: What happens if a packet was actually received? This while is plain empty! It should call the function that passes the packet to the MAC layer, I think */
 		if((!neighbor_discovery_flag) ){
 			off(0);}
 		rtimer_set(&reciever_powercycle_timer,RTIMER_NOW()+1, 0,(void (*)(struct rtimer *, void *))reception_powercycle,NULL);
+		PT_YIELD(&pt);
 	}
-	return;
+	PT_END(&pt);
 }
 /*****************************************************************************/
 static int
@@ -277,10 +265,10 @@ send_one_packet(mac_callback_t sent, void *ptr)
 	exist=check_if_neighbor_exist( Neighbors,addr);
 
 	/*TODO Wait some time to wake up in the right moment*/
-	if( radio_mode==Transmiter_mode && !neighbor_discovery_flag )
+	if( !check_if_radio_on() && !neighbor_discovery_flag )
 		on();
 	/*TODO Beacon detection before sending the packet*/
-	while(radio_mode==Reciever_mode || neighbor_discovery_flag || check_if_radio_on()==0) {}
+	while(check_if_radio_on() || neighbor_discovery_flag || check_if_radio_on()==0) {}
 
 	int ret;
 	int last_sent_ok = 0;
@@ -559,7 +547,6 @@ init(void)
 	initial_rand_seed=linkaddr_node_addr.u8[7];
 	off(0);
 	neighbor_discovery_flag=1;
-	radio_mode=Transmiter_mode;
 	reception_powercycle();
 	neighbor_discovery();
 
