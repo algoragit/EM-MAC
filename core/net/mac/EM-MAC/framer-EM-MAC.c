@@ -78,151 +78,151 @@ static const uint16_t mac_src_pan_id = IEEE802154_PANID;
 static int
 is_broadcast_addr(uint8_t mode, uint8_t *addr)
 {
-  int i = mode == FRAME802154_SHORTADDRMODE ? 2 : 8;
-  while(i-- > 0) {
-    if(addr[i] != 0xff) {
-      return 0;
-    }
-  }
-  return 1;
+	int i = mode == FRAME802154_SHORTADDRMODE ? 2 : 8;
+	while(i-- > 0) {
+		if(addr[i] != 0xff) {
+			return 0;
+		}
+	}
+	return 1;
 }
 /*---------------------------------------------------------------------------*/
 static int
 create_frame(int type, int do_create)
 {
 
-  frame802154_t params;
-  int hdr_len;
+	frame802154_t params;
+	int hdr_len;
 
-  /* init to zeros */
-  memset(&params, 0, sizeof(params));
+	/* init to zeros */
+	memset(&params, 0, sizeof(params));
 
-  if(!initialized) {
-    initialized = 1;
-    mac_dsn = random_rand() & 0xff;
-  }
-  /* Build the FCF. */
+	if(!initialized) {
+		initialized = 1;
+		mac_dsn = random_rand() & 0xff;
+	}
+	/* Build the FCF. */
 
-  params.fcf.frame_type = type;
-  params.fcf.frame_pending = packetbuf_attr(PACKETBUF_ATTR_PENDING);
-  params.fcf.timestamp_flag= packetbuf_attr( PACKETBUF_ATTR_NODE_TIMESTAMP_FLAG);
-  params.fcf.rand_seed_flag = packetbuf_attr( PACKETBUF_ATTR_NODE_RAND_SEED_FLAG);
-  params.fcf.state_flag =packetbuf_attr( PACKETBUF_ATTR_NODE_STATE_FLAG);
-  if(packetbuf_holds_broadcast()) {
-    params.fcf.ack_required = 0;
-  } else {
-    params.fcf.ack_required = packetbuf_attr(PACKETBUF_ATTR_MAC_ACK);
-  }
-  params.fcf.panid_compression = 0;
+	params.fcf.frame_type = type;
+	params.fcf.frame_pending = packetbuf_attr(PACKETBUF_ATTR_PENDING);
+	params.fcf.timestamp_flag= packetbuf_attr( PACKETBUF_ATTR_NODE_TIMESTAMP_FLAG);
+	params.fcf.rand_seed_flag = packetbuf_attr( PACKETBUF_ATTR_NODE_RAND_SEED_FLAG);
+	params.fcf.state_flag =packetbuf_attr( PACKETBUF_ATTR_NODE_STATE_FLAG);
+	if(packetbuf_holds_broadcast()) {
+		params.fcf.ack_required = 0;
+	} else {
+		params.fcf.ack_required = packetbuf_attr(PACKETBUF_ATTR_MAC_ACK);
+	}
+	params.fcf.panid_compression = 0;
 
-  /* Insert IEEE 802.15.4 (2006) version bits. */
-  params.fcf.frame_version = FRAME802154_IEEE802154_2006;
-  
+	/* Insert IEEE 802.15.4 (2006) version bits. */
+	params.fcf.frame_version = FRAME802154_IEEE802154_2006;
+
 #if LLSEC802154_SECURITY_LEVEL
-  if(packetbuf_attr(PACKETBUF_ATTR_SECURITY_LEVEL)) {
-    params.fcf.security_enabled = 1;
-  }
-  /* Setting security-related attributes */
-  params.aux_hdr.security_control.security_level = packetbuf_attr(PACKETBUF_ATTR_SECURITY_LEVEL);
-  params.aux_hdr.frame_counter.u16[0] = packetbuf_attr(PACKETBUF_ATTR_FRAME_COUNTER_BYTES_0_1);
-  params.aux_hdr.frame_counter.u16[1] = packetbuf_attr(PACKETBUF_ATTR_FRAME_COUNTER_BYTES_2_3);
+	if(packetbuf_attr(PACKETBUF_ATTR_SECURITY_LEVEL)) {
+		params.fcf.security_enabled = 1;
+	}
+	/* Setting security-related attributes */
+	params.aux_hdr.security_control.security_level = packetbuf_attr(PACKETBUF_ATTR_SECURITY_LEVEL);
+	params.aux_hdr.frame_counter.u16[0] = packetbuf_attr(PACKETBUF_ATTR_FRAME_COUNTER_BYTES_0_1);
+	params.aux_hdr.frame_counter.u16[1] = packetbuf_attr(PACKETBUF_ATTR_FRAME_COUNTER_BYTES_2_3);
 #if LLSEC802154_USES_EXPLICIT_KEYS
-  params.aux_hdr.security_control.key_id_mode = packetbuf_attr(PACKETBUF_ATTR_KEY_ID_MODE);
-  params.aux_hdr.key_index = packetbuf_attr(PACKETBUF_ATTR_KEY_INDEX);
-  params.aux_hdr.key_source.u16[0] = packetbuf_attr(PACKETBUF_ATTR_KEY_SOURCE_BYTES_0_1);
+	params.aux_hdr.security_control.key_id_mode = packetbuf_attr(PACKETBUF_ATTR_KEY_ID_MODE);
+	params.aux_hdr.key_index = packetbuf_attr(PACKETBUF_ATTR_KEY_INDEX);
+	params.aux_hdr.key_source.u16[0] = packetbuf_attr(PACKETBUF_ATTR_KEY_SOURCE_BYTES_0_1);
 #endif /* LLSEC802154_USES_EXPLICIT_KEYS */
 #endif /* LLSEC802154_SECURITY_LEVEL */
 
-  /* Increment and set the data sequence number. */
-  if(!do_create || type==0 ) {
-    /* Only length calculation - no sequence number is needed and
+	/* Increment and set the data sequence number. */
+	if(!do_create || type==0 ) {
+		/* Only length calculation - no sequence number is needed and
        should not be consumed. */
 
-  } else if(packetbuf_attr(PACKETBUF_ATTR_MAC_SEQNO)) {
-    params.seq = packetbuf_attr(PACKETBUF_ATTR_MAC_SEQNO);
+	} else if(packetbuf_attr(PACKETBUF_ATTR_MAC_SEQNO)) {
+		params.seq = packetbuf_attr(PACKETBUF_ATTR_MAC_SEQNO);
 
-  } else {
-    /* Ensure that the sequence number 0 is not used as it would bypass the above check. */
-    if(mac_dsn == 0) {
-      mac_dsn++;
-    }
-    params.seq = mac_dsn++;
-    packetbuf_set_attr(PACKETBUF_ATTR_MAC_SEQNO, params.seq);
-  }
+	} else {
+		/* Ensure that the sequence number 0 is not used as it would bypass the above check. */
+		if(mac_dsn == 0) {
+			mac_dsn++;
+		}
+		params.seq = mac_dsn++;
+		packetbuf_set_attr(PACKETBUF_ATTR_MAC_SEQNO, params.seq);
+	}
 
-  /* Complete the addressing fields. */
-  /**
+	/* Complete the addressing fields. */
+	/**
      \todo For phase 1 the addresses are all long. We'll need a mechanism
      in the rime attributes to tell the mac to use long or short for phase 2.
-  */
-  if(LINKADDR_SIZE == 2) {
-    /* Use short address mode if linkaddr size is short. */
-    params.fcf.src_addr_mode = FRAME802154_SHORTADDRMODE;
-  } else {
-    params.fcf.src_addr_mode = FRAME802154_LONGADDRMODE;
-  }
-  params.dest_pid = mac_dst_pan_id;
+	 */
+	if(LINKADDR_SIZE == 2) {
+		/* Use short address mode if linkaddr size is short. */
+		params.fcf.src_addr_mode = FRAME802154_SHORTADDRMODE;
+	} else {
+		params.fcf.src_addr_mode = FRAME802154_LONGADDRMODE;
+	}
+	params.dest_pid = mac_dst_pan_id;
 
-  if(packetbuf_holds_broadcast()) {
-    /* Broadcast requires short address mode. */
-    params.fcf.dest_addr_mode = FRAME802154_SHORTADDRMODE;
-    params.dest_addr[0] = 0xFF;
-    params.dest_addr[1] = 0xFF;
+	if(packetbuf_holds_broadcast()) {
+		/* Broadcast requires short address mode. */
+		params.fcf.dest_addr_mode = FRAME802154_SHORTADDRMODE;
+		params.dest_addr[0] = 0xFF;
+		params.dest_addr[1] = 0xFF;
 
-  } else {
-    linkaddr_copy((linkaddr_t *)&params.dest_addr,
-                  packetbuf_addr(PACKETBUF_ADDR_RECEIVER));
-    /* Use short address mode if linkaddr size is small */
-    if(LINKADDR_SIZE == 2) {
-      params.fcf.dest_addr_mode = FRAME802154_SHORTADDRMODE;
-    } else {
-      params.fcf.dest_addr_mode = FRAME802154_LONGADDRMODE;
-    }
-  }
+	} else {
+		linkaddr_copy((linkaddr_t *)&params.dest_addr,
+				packetbuf_addr(PACKETBUF_ADDR_RECEIVER));
+		/* Use short address mode if linkaddr size is small */
+		if(LINKADDR_SIZE == 2) {
+			params.fcf.dest_addr_mode = FRAME802154_SHORTADDRMODE;
+		} else {
+			params.fcf.dest_addr_mode = FRAME802154_LONGADDRMODE;
+		}
+	}
 
-  /* Set the source PAN ID to the global variable. */
-  params.src_pid = mac_src_pan_id;
+	/* Set the source PAN ID to the global variable. */
+	params.src_pid = mac_src_pan_id;
 
-  /*
-   * Set up the source address using only the long address mode for
-   * phase 1.
-   */
-  linkaddr_copy((linkaddr_t *)&params.src_addr, &linkaddr_node_addr);
+	/*
+	 * Set up the source address using only the long address mode for
+	 * phase 1.
+	 */
+	linkaddr_copy((linkaddr_t *)&params.src_addr, &linkaddr_node_addr);
 
-  /* Set the timestamp*/
-  if(params.fcf.timestamp_flag){
-  params.timestamp=packetbuf_attr(PACKETBUF_ATTR_NODE_TIMESTAMP);
-  params.clock_time=packetbuf_attr(PACKETBUF_ATTR_NODE_CLOCK_TIME);
-  }
+	/* Set the timestamp*/
+	if(params.fcf.timestamp_flag){
+		params.timestamp=packetbuf_attr(PACKETBUF_ATTR_NODE_TIMESTAMP);
+		params.clock_time=packetbuf_attr(PACKETBUF_ATTR_NODE_CLOCK_TIME);
+	}
 
-  /*Set the random seed*/
-  if(params.fcf.rand_seed_flag)
-  params.random_seed=packetbuf_attr(PACKETBUF_ATTR_NODE_RAND_SEED);
+	/*Set the random seed*/
+	if(params.fcf.rand_seed_flag)
+		params.random_seed=packetbuf_attr(PACKETBUF_ATTR_NODE_RAND_SEED);
 
-    /*Set the blacklist*/
-  if(params.fcf.frame_type==0)
-  params.blacklist=packetbuf_attr(PACKETBUF_ATTR_NODE_BLACKLIST);
+	/*Set the blacklist*/
+	if(params.fcf.frame_type==0)
+		params.blacklist=packetbuf_attr(PACKETBUF_ATTR_NODE_BLACKLIST);
 
-  params.payload = packetbuf_dataptr();
-  params.payload_len = packetbuf_datalen();
+	params.payload = packetbuf_dataptr();
+	params.payload_len = packetbuf_datalen();
 
-  hdr_len = frame_emmac_hdrlen(&params);
-  if(!do_create) {
-    /* Only calculate header length */
-    return hdr_len;
+	hdr_len = frame_emmac_hdrlen(&params);
+	if(!do_create) {
+		/* Only calculate header length */
+		return hdr_len;
 
-  } else if(packetbuf_hdralloc(hdr_len)) {
-	  frame_emmac_create(&params, packetbuf_hdrptr());
+	} else if(packetbuf_hdralloc(hdr_len)) {
+		frame_emmac_create(&params, packetbuf_hdrptr());
 
-    PRINTF("15.4-OUT: %2X", params.fcf.frame_type);
-    PRINTADDR(params.dest_addr);
-    PRINTF("%d %u (%u)\n", hdr_len, packetbuf_datalen(), packetbuf_totlen());
+		PRINTF("15.4-OUT: %2X", params.fcf.frame_type);
+		PRINTADDR(params.dest_addr);
+		PRINTF("%d %u (%u)\n", hdr_len, packetbuf_datalen(), packetbuf_totlen());
 
-    return hdr_len;
-  } else {
-    printf("15.4-OUT: too large header: %u\n", hdr_len);
-    return FRAMER_FAILED;
-  }
+		return hdr_len;
+	} else {
+		printf("15.4-OUT: too large header: %u\n", hdr_len);
+		return FRAMER_FAILED;
+	}
 }
 
 /*---------------------------------------------------------------------------*/
@@ -230,90 +230,89 @@ static int
 hdr_length(void)
 {
 	if(packetbuf_attr(PACKETBUF_ATTR_FRAME_TYPE)==PACKETBUF_ATTR_FRAME_TYPE_BEACON)
-	  return create_frame( FRAME802154_BEACONFRAME, 0);
-	  else
-	  return create_frame( FRAME802154_DATAFRAME, 0);
+		return create_frame( FRAME802154_BEACONFRAME, 0);
+	else
+		return create_frame( FRAME802154_DATAFRAME, 0);
 }
 /*---------------------------------------------------------------------------*/
 static int
 create(void)
 {
-  if(packetbuf_attr(PACKETBUF_ATTR_FRAME_TYPE)==PACKETBUF_ATTR_FRAME_TYPE_BEACON)
-  return create_frame( FRAME802154_BEACONFRAME, 1);
-  else
-  return create_frame( FRAME802154_DATAFRAME, 1);
+	if(packetbuf_attr(PACKETBUF_ATTR_FRAME_TYPE)==PACKETBUF_ATTR_FRAME_TYPE_BEACON)
+		return create_frame( FRAME802154_BEACONFRAME, 1);
+	else
+		return create_frame( FRAME802154_DATAFRAME, 1);
 }
 /*---------------------------------------------------------------------------*/
 static int
 parse(void)
 {
-
 	frame802154_t frame;
-  int hdr_len;
-  
-  hdr_len = frame_emmac_parse(packetbuf_dataptr(), packetbuf_datalen(), &frame);
-  
-  if(hdr_len && packetbuf_hdrreduce(hdr_len)) {
-    packetbuf_set_attr(PACKETBUF_ATTR_FRAME_TYPE, frame.fcf.frame_type);
-    
-    if(frame.fcf.dest_addr_mode) {
-      if(frame.dest_pid != mac_src_pan_id &&
-          frame.dest_pid != FRAME802154_BROADCASTPANDID) {
-        /* Packet to another PAN */
-        PRINTF("15.4: for another pan %u\n", frame.dest_pid);
-        return FRAMER_FAILED;
-      }
-      if(!is_broadcast_addr(frame.fcf.dest_addr_mode, frame.dest_addr)) {
-        packetbuf_set_addr(PACKETBUF_ADDR_RECEIVER, (linkaddr_t *)&frame.dest_addr);
-      }
-    }
-    if(frame.fcf.timestamp_flag){
-    	packetbuf_set_attr(PACKETBUF_ATTR_NODE_TIMESTAMP, frame.timestamp);
-    	packetbuf_set_attr(PACKETBUF_ATTR_NODE_CLOCK_TIME, frame.clock_time);
-    }
+	int hdr_len;
 
-    if(frame.fcf.rand_seed_flag)
-    	packetbuf_set_attr(PACKETBUF_ATTR_NODE_RAND_SEED, frame.random_seed);
+	hdr_len = frame_emmac_parse(packetbuf_dataptr(), packetbuf_datalen(), &frame);
 
-   if(frame.fcf.frame_type==0)
-    	packetbuf_set_attr(PACKETBUF_ATTR_NODE_BLACKLIST, frame.blacklist);
+	if(hdr_len && packetbuf_hdrreduce(hdr_len)) {
+		packetbuf_set_attr(PACKETBUF_ATTR_FRAME_TYPE, frame.fcf.frame_type);
 
-    packetbuf_set_attr(PACKETBUF_ATTR_NODE_TIMESTAMP_FLAG, frame.fcf.timestamp_flag);
-    packetbuf_set_attr(PACKETBUF_ATTR_NODE_RAND_SEED_FLAG, frame.fcf.rand_seed_flag);
-    packetbuf_set_attr(PACKETBUF_ATTR_NODE_STATE_FLAG, frame.fcf.state_flag);
+		if(frame.fcf.dest_addr_mode) {
+			if(frame.dest_pid != mac_src_pan_id &&
+					frame.dest_pid != FRAME802154_BROADCASTPANDID) {
+				/* Packet to another PAN */
+				PRINTF("15.4: for another pan %u\n", frame.dest_pid);
+				return FRAMER_FAILED;
+			}
+			if(!is_broadcast_addr(frame.fcf.dest_addr_mode, frame.dest_addr)) {
+				packetbuf_set_addr(PACKETBUF_ADDR_RECEIVER, (linkaddr_t *)&frame.dest_addr);
+			}
+		}
+		if(frame.fcf.timestamp_flag){
+			packetbuf_set_attr(PACKETBUF_ATTR_NODE_TIMESTAMP, frame.timestamp);
+			packetbuf_set_attr(PACKETBUF_ATTR_NODE_CLOCK_TIME, frame.clock_time);
+		}
 
-    packetbuf_set_addr(PACKETBUF_ADDR_SENDER, (linkaddr_t *)&frame.src_addr);
-    packetbuf_set_attr(PACKETBUF_ATTR_PENDING, frame.fcf.frame_pending);
-    /*    packetbuf_set_attr(PACKETBUF_ATTR_RELIABLE, frame.fcf.ack_required);*/
-    packetbuf_set_attr(PACKETBUF_ATTR_PACKET_ID, frame.seq);
-    
+		if(frame.fcf.rand_seed_flag)
+			packetbuf_set_attr(PACKETBUF_ATTR_NODE_RAND_SEED, frame.random_seed);
+
+		if(frame.fcf.frame_type==0)
+			packetbuf_set_attr(PACKETBUF_ATTR_NODE_BLACKLIST, frame.blacklist);
+
+		packetbuf_set_attr(PACKETBUF_ATTR_NODE_TIMESTAMP_FLAG, frame.fcf.timestamp_flag);
+		packetbuf_set_attr(PACKETBUF_ATTR_NODE_RAND_SEED_FLAG, frame.fcf.rand_seed_flag);
+		packetbuf_set_attr(PACKETBUF_ATTR_NODE_STATE_FLAG, frame.fcf.state_flag);
+
+		packetbuf_set_addr(PACKETBUF_ADDR_SENDER, (linkaddr_t *)&frame.src_addr);
+		packetbuf_set_attr(PACKETBUF_ATTR_PENDING, frame.fcf.frame_pending);
+		/*    packetbuf_set_attr(PACKETBUF_ATTR_RELIABLE, frame.fcf.ack_required);*/
+		packetbuf_set_attr(PACKETBUF_ATTR_PACKET_ID, frame.seq);
+
 #if LLSEC802154_SECURITY_LEVEL
-    if(frame.fcf.security_enabled) {
-      packetbuf_set_attr(PACKETBUF_ATTR_SECURITY_LEVEL, frame.aux_hdr.security_control.security_level);
-      packetbuf_set_attr(PACKETBUF_ATTR_FRAME_COUNTER_BYTES_0_1, frame.aux_hdr.frame_counter.u16[0]);
-      packetbuf_set_attr(PACKETBUF_ATTR_FRAME_COUNTER_BYTES_2_3, frame.aux_hdr.frame_counter.u16[1]);
+		if(frame.fcf.security_enabled) {
+			packetbuf_set_attr(PACKETBUF_ATTR_SECURITY_LEVEL, frame.aux_hdr.security_control.security_level);
+			packetbuf_set_attr(PACKETBUF_ATTR_FRAME_COUNTER_BYTES_0_1, frame.aux_hdr.frame_counter.u16[0]);
+			packetbuf_set_attr(PACKETBUF_ATTR_FRAME_COUNTER_BYTES_2_3, frame.aux_hdr.frame_counter.u16[1]);
 #if LLSEC802154_USES_EXPLICIT_KEYS
-      packetbuf_set_attr(PACKETBUF_ATTR_KEY_ID_MODE, frame.aux_hdr.security_control.key_id_mode);
-      packetbuf_set_attr(PACKETBUF_ATTR_KEY_INDEX, frame.aux_hdr.key_index);
-      packetbuf_set_attr(PACKETBUF_ATTR_KEY_SOURCE_BYTES_0_1, frame.aux_hdr.key_source.u16[0]);
+			packetbuf_set_attr(PACKETBUF_ATTR_KEY_ID_MODE, frame.aux_hdr.security_control.key_id_mode);
+			packetbuf_set_attr(PACKETBUF_ATTR_KEY_INDEX, frame.aux_hdr.key_index);
+			packetbuf_set_attr(PACKETBUF_ATTR_KEY_SOURCE_BYTES_0_1, frame.aux_hdr.key_source.u16[0]);
 #endif /* LLSEC802154_USES_EXPLICIT_KEYS */
-    }
+		}
 #endif /* LLSEC802154_SECURITY_LEVEL */
 
-    PRINTF("15.4-IN: %2X", frame.fcf.frame_type);
-    PRINTADDR(packetbuf_addr(PACKETBUF_ADDR_SENDER));
-    PRINTADDR(packetbuf_addr(PACKETBUF_ADDR_RECEIVER));
-    PRINTF("%d %u (%u)\n", hdr_len, packetbuf_datalen(), packetbuf_totlen());
-    
-    return hdr_len;
-  }
-  return FRAMER_FAILED;
+		PRINTF("15.4-IN: %2X", frame.fcf.frame_type);
+		PRINTADDR(packetbuf_addr(PACKETBUF_ADDR_SENDER));
+		PRINTADDR(packetbuf_addr(PACKETBUF_ADDR_RECEIVER));
+		PRINTF("%d %u (%u)\n", hdr_len, packetbuf_datalen(), packetbuf_totlen());
+
+		return hdr_len;
+	}
+	return FRAMER_FAILED;
 }
 /*---------------------------------------------------------------------------*/
 const struct framer framer_emmac = {
-  hdr_length,
-  create,
-  framer_canonical_create_and_secure,
-  parse
+		hdr_length,
+		create,
+		framer_canonical_create_and_secure,
+		parse
 };
 /*---------------------------------------------------------------------------*/

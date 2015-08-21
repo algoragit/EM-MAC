@@ -826,7 +826,7 @@ qsend_list(mac_callback_t sent, void *ptr, struct rdc_buf_list *buf_list)
     curr = next;
   } while(next != NULL);
   
-  /* The receiver needs to be awoken before we send */
+  /* The receiver needs to be awaken before we send */
   is_receiver_awake = 0;
   curr = buf_list;
   do { /* A loop sending a burst of packets from buf_list */

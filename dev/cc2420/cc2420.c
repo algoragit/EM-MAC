@@ -576,7 +576,7 @@ cc2420_init(void)
   /* Turn on/off automatic packet acknowledgment and address decoding. */
   reg = getreg(CC2420_MDMCTRL0);
 
-#if CC2420_CONF_AUTOACK
+/*#if CC2420_CONF_AUTOACK
   reg |= AUTOACK | ADR_DECODE;
 #else
   reg &= ~(AUTOACK | ADR_DECODE);
@@ -664,7 +664,7 @@ cc2420_transmit(unsigned short payload_len)
             {
           /* Write timestamp to last two bytes of packet in TXFIFO. */
           write_ram((uint8_t *) &sfd_timestamp, CC2420RAM_TXFIFO + payload_len - 1, 2, WRITE_RAM_IN_ORDER);
-          printf("Sender timestamp: %u\n", sfd_timestamp);
+          //printf("Sender timestamp: %u\n", sfd_timestamp);
         }
       }
 
