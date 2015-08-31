@@ -34,6 +34,7 @@ neighbor_state get_neighbor_state (list_t  Neighbors,linkaddr_t addr)
 				st.blacklist=s->blacklist;
 				st.wake_time_tics=s->wake_time_tics;
 				st.m=s->m;
+				st.last_seed=s->last_seed;
 				st.wake_time_seconds=s->wake_time_seconds;
 				st.n=s->n;
 				linkaddr_copy(&st.node_link_addr,&addr);

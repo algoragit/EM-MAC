@@ -108,42 +108,14 @@
       </interface_config>
       <motetype_identifier>z11</motetype_identifier>
     </mote>
-    <mote>
-      <breakpoints />
-      <interface_config>
-        org.contikios.cooja.interfaces.Position
-        <x>109.58809444649417</x>
-        <y>30.55714633760012</y>
-        <z>0.0</z>
-      </interface_config>
-      <interface_config>
-        org.contikios.cooja.mspmote.interfaces.MspMoteID
-        <id>3</id>
-      </interface_config>
-      <motetype_identifier>z11</motetype_identifier>
-    </mote>
-    <mote>
-      <breakpoints />
-      <interface_config>
-        org.contikios.cooja.interfaces.Position
-        <x>101.3063181182957</x>
-        <y>79.97801278253857</y>
-        <z>0.0</z>
-      </interface_config>
-      <interface_config>
-        org.contikios.cooja.mspmote.interfaces.MspMoteID
-        <id>4</id>
-      </interface_config>
-      <motetype_identifier>z13</motetype_identifier>
-    </mote>
   </simulation>
   <plugin>
     org.contikios.cooja.plugins.SimControl
     <width>280</width>
-    <z>0</z>
+    <z>1</z>
     <height>160</height>
-    <location_x>432</location_x>
-    <location_y>112</location_y>
+    <location_x>492</location_x>
+    <location_y>16</location_y>
   </plugin>
   <plugin>
     org.contikios.cooja.plugins.Visualizer
@@ -153,44 +125,42 @@
       <skin>org.contikios.cooja.plugins.skins.GridVisualizerSkin</skin>
       <skin>org.contikios.cooja.plugins.skins.TrafficVisualizerSkin</skin>
       <skin>org.contikios.cooja.plugins.skins.UDGMVisualizerSkin</skin>
-      <viewport>2.722901565890377 0.0 0.0 2.722901565890377 -67.62700532908859 25.621683151564508</viewport>
+      <viewport>2.596856220821921 0.0 0.0 2.596856220821921 -30.29505754090159 42.1645030277218</viewport>
     </plugin_config>
-    <width>381</width>
-    <z>2</z>
-    <height>311</height>
+    <width>345</width>
+    <z>3</z>
+    <height>241</height>
     <location_x>1</location_x>
     <location_y>1</location_y>
   </plugin>
   <plugin>
     org.contikios.cooja.plugins.LogListener
     <plugin_config>
-      <filter />
+      <filter>ID:2</filter>
       <formatted_time />
       <coloring />
     </plugin_config>
     <width>1093</width>
-    <z>3</z>
-    <height>845</height>
-    <location_x>765</location_x>
-    <location_y>2</location_y>
+    <z>2</z>
+    <height>637</height>
+    <location_x>769</location_x>
+    <location_y>182</location_y>
   </plugin>
   <plugin>
     org.contikios.cooja.plugins.TimeLine
     <plugin_config>
       <mote>0</mote>
       <mote>1</mote>
-      <mote>2</mote>
-      <mote>3</mote>
       <showRadioRXTX />
       <showRadioHW />
       <showLEDs />
-      <zoomfactor>20000.0</zoomfactor>
+      <zoomfactor>100000.0</zoomfactor>
     </plugin_config>
     <width>1873</width>
-    <z>4</z>
+    <z>5</z>
     <height>180</height>
-    <location_x>0</location_x>
-    <location_y>853</location_y>
+    <location_x>3</location_x>
+    <location_y>824</location_y>
   </plugin>
   <plugin>
     org.contikios.cooja.plugins.RadioLogger
@@ -199,12 +169,40 @@
       <formatted_time />
       <showdups>false</showdups>
       <hidenodests>false</hidenodests>
+      <analyzers name="6lowpan" />
     </plugin_config>
-    <width>763</width>
-    <z>1</z>
+    <width>774</width>
+    <z>4</z>
     <height>536</height>
-    <location_x>0</location_x>
-    <location_y>311</location_y>
+    <location_x>1</location_x>
+    <location_y>285</location_y>
+  </plugin>
+  <plugin>
+    org.contikios.cooja.plugins.LogListener
+    <plugin_config>
+      <filter>ID:1</filter>
+      <formatted_time />
+      <coloring />
+    </plugin_config>
+    <width>736</width>
+    <z>-1</z>
+    <height>856</height>
+    <location_x>31</location_x>
+    <location_y>181</location_y>
+    <minimized>true</minimized>
+  </plugin>
+  <plugin>
+    org.contikios.cooja.plugins.LogListener
+    <plugin_config>
+      <filter>ID:1</filter>
+      <formatted_time />
+      <coloring />
+    </plugin_config>
+    <width>755</width>
+    <z>0</z>
+    <height>669</height>
+    <location_x>10</location_x>
+    <location_y>151</location_y>
   </plugin>
 </simconf>
 
