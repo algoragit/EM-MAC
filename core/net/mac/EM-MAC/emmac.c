@@ -75,7 +75,6 @@ static unsigned short ack_len;
 static unsigned short neighbor_discovery_flag;
 static unsigned int w_up_time;
 static unsigned time_in_seconds;
-static int channel_list[16];
 static unsigned int sequence_number=0;
 #define MEMB_SIZE 4
 MEMB(neighbor_memb, neighbor_state, MEMB_SIZE);
@@ -118,7 +117,6 @@ on(void)
 /*Proceso de descubrimiento de vecinos que se lleva a cabo en la funcion init()*/
 static void neighbor_discovery(void)
 {
-	//printf("test: %u\n", (unsigned int)(long int)(43441)-(long int)(-63135));
 	uint8_t beacon_buf[12];
 	static  linkaddr_t addr;
 	neighbor_discovery_flag=1;
@@ -191,6 +189,7 @@ static void neighbor_discovery(void)
 			neighbor_discovery_flag=0;
 		}
 	}
+	/************ Print the neighbor list after the neighbor discovery. (Debug purposes only)   *********/
 	neighbor_state *test=list_head(Neighbors);
 	printf("Neighbor List after Neighbor Discovery: ");
 	while(test != NULL) {
@@ -198,7 +197,7 @@ static void neighbor_discovery(void)
 		test = list_item_next(test);
 	}
 	printf("\n");
-	//leds_on("4");
+	/************ end of neighbor list printing **********************************************************/
 }
 /******************************************************************************/
 /*La siguiente funcion se usa para controlar el ciclo util de radio*/
@@ -210,24 +209,29 @@ static char reception_powercycle(void)
 		if(!neighbor_discovery_flag  &&  linkaddr_node_addr.u8[7]==1){
 			off(0);}
 		initial_rand_seed=(15213*initial_rand_seed)+11237;
+		/********** Makes node 1 to print it's sleeping period for the next cycle and the original seed to calculate it ********/
 		if (linkaddr_node_addr.u8[7]==1){
 			printf("SEED:%u  Sleep:%u  ",initial_rand_seed,initial_rand_seed%RTIMER_SECOND + RTIMER_SECOND/2);}
-		//printf("Sleeping period: %u\n", initial_rand_seed);
+
+		/********** Makes node 1 to follow it's own powercycle schedule ant node 2 to follow the node 1's powercycle schedule **********/
 		if (linkaddr_node_addr.u8[7]==1){
 		rtimer_set(&reciever_powercycle_timer,(w_up_time+(initial_rand_seed%RTIMER_SECOND + RTIMER_SECOND/2)), 0,(void (*)(struct rtimer *, void *))reception_powercycle,NULL);
 		} else {
 			neighbor_state *test=list_head(Neighbors);
 			if (test->wake_time_seconds!=NULL){
-				rtimer_set(&reciever_powercycle_timer,(w_up_time+get_neighbor_wake_up_time(get_neighbor_state(Neighbors, test->node_link_addr))), 0,(void (*)(struct rtimer *, void *))reception_powercycle,NULL);
+				rtimer_set(&reciever_powercycle_timer,(get_neighbor_wake_up_time(get_neighbor_state(Neighbors, test->node_link_addr))), 0,(void (*)(struct rtimer *, void *))reception_powercycle,NULL);
+				leds_off(15);
 			} else {
 				rtimer_set(&reciever_powercycle_timer,(w_up_time+(initial_rand_seed%RTIMER_SECOND + RTIMER_SECOND/2)), 0,(void (*)(struct rtimer *, void *))reception_powercycle,NULL);
 			}
 		}
+		/******* The only remaining line of this part that will pass to the final code is the one following the if() sentence that ends before this comment *****/
 		PT_YIELD(&pt);
 
 		/* Turn on the radio interface */
 		if(check_if_radio_on()==0){
 			on();}
+		leds_on(15);
 		rtimer_set(&reciever_powercycle_timer,RTIMER_NOW()+1000, 0,(void (*)(struct rtimer *, void *))reception_powercycle,NULL);
 		/* Save the timestamps (in tics and in seconds) of the last wake-up,
 		 * which will be transmitted when the state is requested through an ACK */
@@ -236,11 +240,15 @@ static char reception_powercycle(void)
 		/* TODO: Get the blacklist and embed it into the beacon. Now, the value for the blacklist is fixed to 100 */
 		packetbuf_set_attr(PACKETBUF_ATTR_NODE_BLACKLIST, 0x00F0);
 		blacklist=packetbuf_attr(PACKETBUF_ATTR_NODE_BLACKLIST);
+		/****** I think I included this section but it proved not to be useful. I think it can be deleted but I'm not sure. ********/
 		sequence_number++;
 		packetbuf_set_attr(PACKETBUF_ATTR_PACKET_ID, sequence_number);
+		/*******************/
+		/********** Makes node 1 to print the time he woke-up in secs and tics. For debuging purposes only ********/
 		if (linkaddr_node_addr.u8[7]==1){
 			printf("secs:%u    ",time_in_seconds);
 			printf("tics:%u \n",w_up_time);}
+		/*********************************************************************************************************/
 		/* Create beacon and transmit it */
 		uint8_t beacon_data[12] = {0,0,0,0,0,0,0,0,0,0,0};
 		beacon_data[0]=FRAME802154_BEACONFRAME;
@@ -257,19 +265,22 @@ static char reception_powercycle(void)
 		beacon_data[11]=linkaddr_node_addr.u8[7];
 		NETSTACK_RADIO.send(beacon_data, 12);
 		/* After a beacon is sent, wait for DATA_PACKET_WAITING_TIME period */
-		if (linkaddr_node_addr.u8[7]==2){
+		/************* Making node 2 follow the powercycle schedule of node 1 using the time prediction mechanism  ********************/
+		/*if (linkaddr_node_addr.u8[7]==2){
 			neighbor_state *test=list_head(Neighbors);
 			if (test->wake_time_seconds!=NULL){
-				get_neighbor_wake_up_time(get_neighbor_state(Neighbors, test->node_link_addr));}}
+				get_neighbor_wake_up_time(get_neighbor_state(Neighbors, test->node_link_addr));}}*/
+		/***********************************/
 		wt = RTIMER_NOW();
 		while(RTIMER_CLOCK_LT(RTIMER_NOW(), wt + DATA_PACKET_WAIT_TIME)) {}
 		/* Check if a packet was received */
 		while(NETSTACK_RADIO.receiving_packet() ||
 				NETSTACK_RADIO.channel_clear() == 0){}
 		/* TODO: What happens if a packet was actually received? This while is plain empty! It should call the function that passes the packet to the MAC layer, I think */
-		// TODO Why is this rtimer_set useful? It can be removed with the PT_YIELD and just follow the while loop, I think.
+		/************ TODO Why is this rtimer_set useful? It can be removed with the PT_YIELD and just follow the while loop, I think. */
 		//rtimer_set(&reciever_powercycle_timer,RTIMER_NOW()+1000, 0,(void (*)(struct rtimer *, void *))reception_powercycle,NULL);
 		//printf("Timer spent awake: %u\n", RTIMER_NOW()-w_up_time);
+		/******************************************************************************************************************************/
 		PT_YIELD(&pt);
 	}
 	PT_END(&pt);
@@ -278,7 +289,7 @@ static char reception_powercycle(void)
 static int
 send_one_packet(mac_callback_t sent, void *ptr)
 {
-	printf("send_one_packet()\n");
+	//printf("send_one_packet()\n");
 	neighbor_state *n;
 	/*n_state se usa para el establecimiento de la bandera de peticion de estado*/
 	neighbor_state n_state;
@@ -306,7 +317,7 @@ send_one_packet(mac_callback_t sent, void *ptr)
 	}*/
 	while(neighbor_discovery_flag || check_if_radio_on()==0) {}
 
-	/* Beacon detection before sending the packet*/
+	/******************** Beacon detection before sending the packet ****************/
 	int beacon_received = 0;
 	int i=0;
 	uint8_t beaconbuf[12];
@@ -338,6 +349,7 @@ send_one_packet(mac_callback_t sent, void *ptr)
 	}else{
 		//printf("beacon received: %d Type: %d FRAME802154_BEACONFRAME: %d Comparison: %d\n", beacon_received, beaconbuf[0], FRAME802154_BEACONFRAME, beaconbuf[0]==FRAME802154_BEACONFRAME);
 	}
+	/***************************************************************************************/
 
 	int ret;
 	int last_sent_ok = 0;
@@ -537,7 +549,7 @@ send_packet(mac_callback_t sent, void *ptr)
 static void
 send_list(mac_callback_t sent, void *ptr, struct rdc_buf_list *buf_list)
 {
-	printf("send_list()\n");
+	//printf("send_list()\n");
 	while(buf_list != NULL) {
 		/* We backup the next pointer, as it may be nullified by
 		 * mac_call_sent_callback() */
@@ -560,7 +572,7 @@ send_list(mac_callback_t sent, void *ptr, struct rdc_buf_list *buf_list)
 static void
 packet_input(void)
 {
-	printf("packet_input()\n");
+	//printf("packet_input()\n");
 	//printf("DENTRO DE PACKET_INPUT\n");
 	unsigned int wake_up_time;
 	int original_datalen;
