@@ -8,7 +8,7 @@
   <project EXPORT="discard">[APPS_DIR]/powertracker</project>
   <simulation>
     <title>My simulation</title>
-    <speedlimit>2.0</speedlimit>
+    <speedlimit>10.0</speedlimit>
     <randomseed>123456</randomseed>
     <motedelay_us>1000000</motedelay_us>
     <radiomedium>
@@ -113,7 +113,7 @@
   <plugin>
     org.contikios.cooja.plugins.SimControl
     <width>280</width>
-    <z>3</z>
+    <z>0</z>
     <height>160</height>
     <location_x>492</location_x>
     <location_y>16</location_y>
@@ -137,12 +137,12 @@
   <plugin>
     org.contikios.cooja.plugins.LogListener
     <plugin_config>
-      <filter />
+      <filter>Channel</filter>
       <formatted_time />
       <coloring />
     </plugin_config>
     <width>1093</width>
-    <z>0</z>
+    <z>2</z>
     <height>637</height>
     <location_x>769</location_x>
     <location_y>182</location_y>
@@ -153,17 +153,18 @@
       <mote>0</mote>
       <mote>1</mote>
       <showRadioRXTX />
+      <showRadioChannels />
       <showRadioHW />
       <showLEDs />
       <showWatchpoints />
       <executionDetails />
-      <zoomfactor>50000.0</zoomfactor>
+      <zoomfactor>5000.0</zoomfactor>
     </plugin_config>
     <width>1873</width>
     <z>1</z>
-    <height>185</height>
-    <location_x>3</location_x>
-    <location_y>824</location_y>
+    <height>181</height>
+    <location_x>0</location_x>
+    <location_y>849</location_y>
   </plugin>
   <plugin>
     org.contikios.cooja.plugins.RadioLogger
@@ -175,7 +176,7 @@
       <analyzers name="6lowpan" />
     </plugin_config>
     <width>774</width>
-    <z>2</z>
+    <z>3</z>
     <height>536</height>
     <location_x>1</location_x>
     <location_y>285</location_y>
