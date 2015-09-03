@@ -122,24 +122,32 @@ static void neighbor_discovery(void)
 	neighbor_discovery_flag=1;
 	unsigned int wt;
 	neighbor_state *n;
+	uint8_t ackdata[13] = {0};
+	unsigned int t_seconds;
+	unsigned int w_time;
+	unsigned int t_sec;
+	unsigned int last_generated;
+	unsigned int c_t_sec;
+	unsigned int t_tic;
+	unsigned int local_time_tics;
+	unsigned int local_time_seconds;
+
 	/*Para establecer el tiempo que durara el proceso de descubrimiento de vecinos se usa el timer.h por encuesta.
 	 * Lo ideal seria usar el rtimer pero no se puede debido a que solo puede existir una unica instancia del mismo
 	 * El uso de la unica instancia permitida del rtimer se reserva para el powercycle*/
 
 	timer_set(&w,((CLOCK_SECOND*5)));
 	while(neighbor_discovery_flag){
-		if(NETSTACK_RADIO.receiving_packet() ||
-				NETSTACK_RADIO.pending_packet() ||
-				NETSTACK_RADIO.channel_clear() == 0){
-
+		leds_on(2);
+		if(NETSTACK_RADIO.receiving_packet() || NETSTACK_RADIO.pending_packet() || NETSTACK_RADIO.channel_clear() == 0){
 			wt=RTIMER_NOW();
-
 			/*Si se cumple que estamos recibiendo un paquete o hay un paquete recibido pendiente a ser leido o hay un paquete
 			 * en el aire entonces esperamos un tiempo AFTER_ACK_DETECTED_WAIT_TIME luego del cual leemos el paquete*/
-
-			while(RTIMER_CLOCK_LT(RTIMER_NOW(), wt + AFTER_ACK_DETECTED_WAIT_TIME)) {} /*Mientras que RTIMER_NOW() sea menor que wt + AFTER_ACK_DETECTED_WAIT_TIME. */
+			while(RTIMER_CLOCK_LT(RTIMER_NOW(), wt + AFTER_ACK_DETECTED_WAIT_TIME)) {}
 			if(NETSTACK_RADIO.pending_packet()) {
-				NETSTACK_RADIO.read(beacon_buf, 12);
+				NETSTACK_RADIO.read(beacon_buf, 13);
+				local_time_tics = RTIMER_NOW();
+				local_time_seconds = clock_seconds();
 				if(beacon_buf[0]==FRAME802154_BEACONFRAME)
 				{
 					/*Copiamos la direccion del beacon recibido dentro del buffer addr*/
@@ -152,51 +160,96 @@ static void neighbor_discovery(void)
 					addr.u8[6]=beacon_buf[10];
 					addr.u8[7]=beacon_buf[11];
 
-					/* If we have an entry for this neighbor already, we renew it. */   //WHY?!?!!?!?!?!?!?!?!??***************************
-					for(n = list_head(Neighbors); n != NULL; n = list_item_next(n)) {
-						if(linkaddr_cmp(&addr, &n->node_link_addr)) {
-							n->blacklist=NULL;
-							n->wake_time_tics=NULL;
-							n->m=NULL;
-							n->wake_time_seconds=NULL;
-							n->last_seed=NULL;
-							n->n=NULL;
-							break;
+					if (addr.u8[7]!=0){
+						/* If we have an entry for this neighbor already, we break and send the ACK. */
+						for(n = list_head(Neighbors); n != NULL; n = list_item_next(n)) {
+							if(linkaddr_cmp(&addr, &n->node_link_addr)) {
+								break;
+							}
+						}
+						/* No matching encounter was found, so we allocate a new one. */
+						if(n == NULL) {
+							n = memb_alloc(&neighbor_memb);
+							if(n == NULL) {
+								/* We could not allocate memory for this encounter, so we just drop it. */
+								return;
+							}
+							linkaddr_copy(&n->node_link_addr, &addr);
+							list_add(Neighbors, n);
 						}
 					}
-					/* No matching encounter was found, so we allocate a new one. */
-					if(n == NULL) {
-						n = memb_alloc(&neighbor_memb);
-						if(n == NULL) {
-							/* We could not allocate memory for this encounter, so we just drop it. */
-							return;
+					ack_len=13;
+					t_seconds=clock_seconds();
+					ackdata[0] = FRAME802154_ACKFRAME;
+					ackdata[1] = 0;
+					ackdata[2] = 0;  // Here goes the sequence number but it shouldn't be needed in neighbor discovery
+					ackdata[3] = w_up_time & 0xff; /*w_up_time es el tiempo en tics del ultimo wake-up*/
+					ackdata[4] = (w_up_time>> 8) & 0xff;
+					ackdata[5] = time_in_seconds & 0xff;/*time_in_seconds es el tiempo en secs del ultimo wake-up*/
+					ackdata[6] = (time_in_seconds>> 8) & 0xff;
+					ackdata[7] = initial_rand_seed & 0xff;
+					ackdata[8] = (initial_rand_seed>>8) & 0xff;
+					ackdata[9] = t_seconds & 0xff;
+					ackdata[10] = (t_seconds>>8) & 0xff;
+					ackdata[11] = 0;/*Se deja vacio para colocar el tiempo actual en tics a nivel fisico*/
+					ackdata[12] = 0;
+					//printf("Wake-time secs: %u  ",time_in_seconds);
+					//printf("Wake-time tics %u  initial_rand_seed: %u\n",w_up_time, initial_rand_seed);
+					packetbuf_set_attr( PACKETBUF_ATTR_NODE_RADIO_TIMESTAMP_FLAG, 1);/*Se activa el timestamp a nivel fisico*/
+					NETSTACK_RADIO.send(ackdata, ack_len);
+					packetbuf_set_attr( PACKETBUF_ATTR_NODE_RADIO_TIMESTAMP_FLAG, 0);/*Se desactiva el timestamp a nivel fisico*/
+				}
+				if(beacon_buf[0]==FRAME802154_ACKFRAME){
+					/*Si el ACK lleva informacion de estado, esta se lee y se almacen en variables temporales*/
+					w_time= beacon_buf[3]+ (beacon_buf[4] << 8); // Tiempo de wake-up en tics
+					t_sec=beacon_buf[5]+ (beacon_buf[6] << 8);  // Tiempo de wake-up en seg
+					last_generated=beacon_buf[7]+ (beacon_buf[8] << 8);  // Última semilla del generador
+					c_t_sec = beacon_buf[9]+ (beacon_buf[10] << 8); //tiempo actual en seconds
+					t_tic=beacon_buf[11]+ (beacon_buf[12] << 8); //tiempo actual en tics
+					if (addr.u8[7]!=0){
+						/* Update the state information for the node that sent the ACK */
+						for(n = list_head(Neighbors); n != NULL; n = list_item_next(n)) {
+							if(linkaddr_cmp(&addr, &n->node_link_addr)) {
+								n->wake_time_tics=w_time;
+								n->wake_time_seconds=t_sec;
+								n->last_seed=last_generated;
+								n->n=(long int)((long int)(local_time_tics)-(long int)(t_tic));
+								n->m=(int)((long int)(local_time_seconds)-(long int)(c_t_sec));
+								break;
+							}
 						}
-						linkaddr_copy(&n->node_link_addr, &addr);
-						n->blacklist=NULL;
-						n->wake_time_tics=NULL;
-						n->m=NULL;
-						n->wake_time_seconds=NULL;
-						n->last_seed=NULL;
-						n->n=NULL;
-						list_add(Neighbors, n);
+						/* If no matching encounter was found, we try to allocate a new one. */
+						if(n == NULL) {
+							n = memb_alloc(&neighbor_memb);
+							if(n == NULL) {
+								break; // We could not allocate memory for this encounter, so we just drop it.
+							}
+							linkaddr_copy(&n->node_link_addr, &addr);
+							n->wake_time_tics=w_time;
+							n->wake_time_seconds=t_sec;
+							n->last_seed=last_generated;
+							n->n=(long int)((long int)(local_time_tics)-(long int)(t_tic));
+							n->m=(int)((long int)(local_time_seconds)-(long int)(c_t_sec));
+							list_add(Neighbors, n);
+						}
 					}
 				}
 			}
 		}
-		/*Si el temporizador ha expirado hacemos neighbor_discovery_flag=0 luego de lo cual salimos del proceso
-		 * de descubrimiento de vecinos*/
+		/* Once the timer has expired, neighbor discovery is finished */
 		if(timer_expired(&w)){
 			neighbor_discovery_flag=0;
+			leds_off(2);
 		}
 	}
 	/************ Print the neighbor list after the neighbor discovery. (Debug purposes only)   *********/
 	neighbor_state *test=list_head(Neighbors);
-	printf("Neighbor List after Neighbor Discovery: ");
+	printf("Neighbor List after Neighbor Discovery: \n");
 	while(test != NULL) {
-		printf("%d ", test->node_link_addr.u8[7]);
+		printf("%d. wake_time_tics: %u, m: %d last_seed: %u, wake_time_seconds: %u, n: %ld\n",
+				test->node_link_addr.u8[7], test->wake_time_tics, test->m, test->last_seed, test->wake_time_seconds, test->n);
 		test = list_item_next(test);
 	}
-	printf("\n");
 	/************ end of neighbor list printing **********************************************************/
 }
 /******************************************************************************/
@@ -207,7 +260,9 @@ static char reception_powercycle(void)
 	PT_BEGIN(&pt);
 	while (1){
 		if(!neighbor_discovery_flag  &&  linkaddr_node_addr.u8[7]==1){
-			off(0);}
+			off(0);
+			leds_off(7);
+		}
 		initial_rand_seed=(15213*initial_rand_seed)+11237;
 		/********** Makes node 1 to print it's sleeping period for the next cycle and the original seed to calculate it ********/
 		if (linkaddr_node_addr.u8[7]==1){
@@ -220,7 +275,7 @@ static char reception_powercycle(void)
 			neighbor_state *test=list_head(Neighbors);
 			if (test->wake_time_seconds!=NULL){
 				rtimer_set(&reciever_powercycle_timer,(get_neighbor_wake_up_time(get_neighbor_state(Neighbors, test->node_link_addr))), 0,(void (*)(struct rtimer *, void *))reception_powercycle,NULL);
-				leds_off(15);
+				leds_off(7);
 			} else {
 				rtimer_set(&reciever_powercycle_timer,(w_up_time+(initial_rand_seed%RTIMER_SECOND + RTIMER_SECOND/2)), 0,(void (*)(struct rtimer *, void *))reception_powercycle,NULL);
 			}
@@ -231,7 +286,7 @@ static char reception_powercycle(void)
 		/* Turn on the radio interface */
 		if(check_if_radio_on()==0){
 			on();}
-		leds_on(15);
+		leds_on(7);
 		rtimer_set(&reciever_powercycle_timer,RTIMER_NOW()+1000, 0,(void (*)(struct rtimer *, void *))reception_powercycle,NULL);
 		/* Save the timestamps (in tics and in seconds) of the last wake-up,
 		 * which will be transmitted when the state is requested through an ACK */
@@ -357,7 +412,7 @@ send_one_packet(mac_callback_t sent, void *ptr)
 	packetbuf_set_attr( PACKETBUF_ATTR_NODE_STATE_FLAG, 0);
 	packetbuf_set_attr(PACKETBUF_ATTR_MAC_ACK,1);
 
-	printf("ACK= E:%d, BC:%d, State:%d\n", !exist, !is_broadcast,n_state.m==NULL);
+	//printf("ACK= E:%d, BC:%d, State:%d\n", !exist, !is_broadcast,n_state.m==NULL);
 	if((!exist && !is_broadcast) || (n_state.m==NULL && !is_broadcast)){/*Si el vecino no existe y el paquete no es de broadcast o no se ha completado el estado del vecinoy el paquete no es de broadcast */
 		packetbuf_set_attr( PACKETBUF_ATTR_NODE_STATE_FLAG, 1);
 		printf("ACK_STATE_RQ\n");
