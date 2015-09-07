@@ -29,8 +29,8 @@ unsigned int get_neighbor_wake_up_time(neighbor_state v)
 
 	/* Generating Channel list for the neighbor */
 	unsigned int channel_list[16]={0};
-	generate_ch_list(&channel_list, v.node_link_addr.u8[7], 16);
-	/*current_seed = 1;
+	/*generate_ch_list(&channel_list, v.node_link_addr.u8[7], 16);
+	current_seed = 1;
 	next_wake_secs = 0;
 	next_wake_tics = 0;
 	diff_secs = 0;
@@ -41,11 +41,11 @@ unsigned int get_neighbor_wake_up_time(neighbor_state v)
 	unsigned long local_seconds = clock_seconds();
 	unsigned int iteration=0;
 	unsigned int seed_temp;
-	/*printf("%d. Neighbor: %d  STARTING point: tics=%u secs=%u seed=%u LOCAL_SECS:%lu\n",
-			iteration, v.node_link_addr.u8[7], next_wake_tics, next_wake_secs, current_seed, local_seconds);*/
+	printf("%d. Neighbor: %d  STARTING point: tics=%u secs=%u seed=%u LOCAL_SECS:%lu\n",
+			iteration, v.node_link_addr.u8[7], next_wake_tics, next_wake_secs, current_seed, local_seconds);
 	//printf("Neighbor: %d   local seconds: %u next_wake_secs: %u  local_tics: %u   next_wake_tics: %u\n", v.node_link_addr.u8[7], local_seconds, next_wake_secs, RTIMER_NOW(), next_wake_tics);
 	unsigned int next_wake_tics_temp=0;
-	while ((next_wake_secs <= (local_seconds - diff_secs)) /*&& (next_wake_tics < (RTIMER_NOW()-diff_secs))*/){
+	while ((next_wake_secs < (local_seconds - diff_secs)) || ((next_wake_tics < (RTIMER_NOW()-diff_secs)) && (next_wake_secs == (local_seconds - diff_secs)))){
 		iteration++;
 		seed_temp=current_seed;
 		current_seed=((15213*current_seed)+11237);
@@ -53,29 +53,30 @@ unsigned int get_neighbor_wake_up_time(neighbor_state v)
 
 		/**************************************************************************************************************************************************************************************/
 		if (next_wake_tics < RTIMER_SECOND){
-			if ((next_wake_tics_temp + next_wake_tics + 1000) < next_wake_tics){
+			if ((next_wake_tics_temp + next_wake_tics) < next_wake_tics){
 				next_wake_secs+=2;
 			}
-			if ((next_wake_tics_temp + next_wake_tics + 1000) > RTIMER_SECOND){
+			if ((next_wake_tics_temp + next_wake_tics) > RTIMER_SECOND){
 				next_wake_secs++;
 			}
 		}
 		if (next_wake_tics > RTIMER_SECOND){
-			if ((next_wake_tics_temp + next_wake_tics + 1000) < RTIMER_SECOND){
+			if ((next_wake_tics_temp + next_wake_tics) < RTIMER_SECOND){
 				next_wake_secs++;
 			}
-			if (((next_wake_tics_temp + next_wake_tics + 1000) > RTIMER_SECOND) && ((next_wake_tics_temp + next_wake_tics + 1000) < next_wake_tics)){
+			if (((next_wake_tics_temp + next_wake_tics) > RTIMER_SECOND) && ((next_wake_tics_temp + next_wake_tics) < next_wake_tics)){
 				next_wake_secs+=2;
 			}
 		}
 		// Adding the time spent awake by the node
-		next_wake_tics += (next_wake_tics_temp + 1000);
+		next_wake_tics += next_wake_tics_temp;
 		local_seconds = clock_seconds();
 		/*printf("%u. ", iteration);
-		printf("Neighbor: %d  POINT: t_seed:%u, c_seed=%u secs=%u tics_t=%u tics_a=%u  L_SECS:%lu\n",
-				v.node_link_addr.u8[7], seed_temp, current_seed, next_wake_secs, next_wake_tics_temp, next_wake_tics, local_seconds);
+		printf("Neighbor: %d  POINT: c_seed=%u secs=%u tics_t=%u tics_a=%u  L_SECS:%lu\n",
+				v.node_link_addr.u8[7], current_seed, next_wake_secs, next_wake_tics_temp, next_wake_tics, local_seconds);*/
+
 		// Adding the time spent awake by the node
-		if ((next_wake_tics + ON_PERIOD) > RTIMER_SECOND){
+		/*if ((next_wake_tics + ON_PERIOD) > RTIMER_SECOND){
 			next_wake_tics = (next_wake_tics + ON_PERIOD)%RTIMER_SECOND;
 			next_wake_secs++;
 		}else {
@@ -101,9 +102,8 @@ unsigned int get_neighbor_wake_up_time(neighbor_state v)
 		//printf(" next_wake: %u\n", next_wake_tics);
 	}
 
-	/*printf("%u. ", iteration);
-	printf("Neighbor: %d  POINT: t_seed:%u, c_seed=%u secs=%u tics_t=%u tics_a=%u  L_SECS:%lu\n\n",
-			v.node_link_addr.u8[7], seed_temp, current_seed, next_wake_secs, next_wake_tics_temp, next_wake_tics, local_seconds);*/
+	printf("%u.%d c_seed=%u secs=%u tics_t=%u tics_a=%u L_SECS:%lu L_TICS:%u DIFF_TICS:%ld\n",
+			iteration, v.node_link_addr.u8[7], current_seed, next_wake_secs, next_wake_tics_temp, next_wake_tics, local_seconds, RTIMER_NOW(), diff_tics);
 	//printf("%u\n", RTIMER_NOW()-start_tics);
 	/*printf("Test Channels: \n");
 	unsigned int seed=linkaddr_node_addr.u8[7];
@@ -116,5 +116,6 @@ unsigned int get_neighbor_wake_up_time(neighbor_state v)
 	}
 	printf("\n");*/
 
-	return next_wake_tics-diff_tics;
+	leds_blink();
+	return next_wake_tics+diff_tics;
 }

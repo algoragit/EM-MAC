@@ -8,11 +8,6 @@
   <project EXPORT="discard">[APPS_DIR]/powertracker</project>
   <simulation>
     <title>My simulation</title>
-<<<<<<< Updated upstream
-    <speedlimit>2.0</speedlimit>
-=======
-    <speedlimit>1.0</speedlimit>
->>>>>>> Stashed changes
     <randomseed>123456</randomseed>
     <motedelay_us>1000000</motedelay_us>
     <radiomedium>
@@ -28,26 +23,6 @@
     <motetype>
       org.contikios.cooja.mspmote.Z1MoteType
       <identifier>z11</identifier>
-      <description>Z1 Mote Type #z11</description>
-      <source EXPORT="discard">[CONTIKI_DIR]/Projects/rpl-udp/udp-client.c</source>
-      <commands EXPORT="discard">make udp-client.z1 TARGET=z1</commands>
-      <firmware EXPORT="copy">[CONTIKI_DIR]/Projects/rpl-udp/udp-client.z1</firmware>
-      <moteinterface>org.contikios.cooja.interfaces.Position</moteinterface>
-      <moteinterface>org.contikios.cooja.interfaces.RimeAddress</moteinterface>
-      <moteinterface>org.contikios.cooja.interfaces.IPAddress</moteinterface>
-      <moteinterface>org.contikios.cooja.interfaces.Mote2MoteRelations</moteinterface>
-      <moteinterface>org.contikios.cooja.interfaces.MoteAttributes</moteinterface>
-      <moteinterface>org.contikios.cooja.mspmote.interfaces.MspClock</moteinterface>
-      <moteinterface>org.contikios.cooja.mspmote.interfaces.MspMoteID</moteinterface>
-      <moteinterface>org.contikios.cooja.mspmote.interfaces.MspButton</moteinterface>
-      <moteinterface>org.contikios.cooja.mspmote.interfaces.Msp802154Radio</moteinterface>
-      <moteinterface>org.contikios.cooja.mspmote.interfaces.MspDefaultSerial</moteinterface>
-      <moteinterface>org.contikios.cooja.mspmote.interfaces.MspLED</moteinterface>
-      <moteinterface>org.contikios.cooja.mspmote.interfaces.MspDebugOutput</moteinterface>
-    </motetype>
-    <motetype>
-      org.contikios.cooja.mspmote.Z1MoteType
-      <identifier>z12</identifier>
       <description>Server</description>
       <source EXPORT="discard">[CONTIKI_DIR]/Projects/rpl-udp/udp-server.c</source>
       <commands EXPORT="discard">make udp-server.z1 TARGET=z1</commands>
@@ -67,8 +42,8 @@
     </motetype>
     <motetype>
       org.contikios.cooja.mspmote.Z1MoteType
-      <identifier>z13</identifier>
-      <description>Z1 Mote Type #z13</description>
+      <identifier>z12</identifier>
+      <description>Client</description>
       <source EXPORT="discard">[CONTIKI_DIR]/Projects/rpl-udp/udp-client.c</source>
       <commands EXPORT="discard">make udp-client.z1 TARGET=z1</commands>
       <firmware EXPORT="copy">[CONTIKI_DIR]/Projects/rpl-udp/udp-client.z1</firmware>
@@ -89,38 +64,38 @@
       <breakpoints />
       <interface_config>
         org.contikios.cooja.interfaces.Position
-        <x>95.69937383985</x>
-        <y>2.6874679861725355</y>
+        <x>75.85013093228147</x>
+        <y>57.78409938891289</y>
         <z>0.0</z>
       </interface_config>
       <interface_config>
         org.contikios.cooja.mspmote.interfaces.MspMoteID
         <id>1</id>
       </interface_config>
-      <motetype_identifier>z12</motetype_identifier>
+      <motetype_identifier>z11</motetype_identifier>
     </mote>
     <mote>
       <breakpoints />
       <interface_config>
         org.contikios.cooja.interfaces.Position
-        <x>100.39185294974048</x>
-        <y>42.60811750333852</y>
+        <x>62.37341293128526</x>
+        <y>94.25817397024396</y>
         <z>0.0</z>
       </interface_config>
       <interface_config>
         org.contikios.cooja.mspmote.interfaces.MspMoteID
         <id>2</id>
       </interface_config>
-      <motetype_identifier>z11</motetype_identifier>
+      <motetype_identifier>z12</motetype_identifier>
     </mote>
   </simulation>
   <plugin>
     org.contikios.cooja.plugins.SimControl
     <width>280</width>
-    <z>3</z>
+    <z>1</z>
     <height>160</height>
-    <location_x>492</location_x>
-    <location_y>16</location_y>
+    <location_x>400</location_x>
+    <location_y>0</location_y>
   </plugin>
   <plugin>
     org.contikios.cooja.plugins.Visualizer
@@ -130,30 +105,27 @@
       <skin>org.contikios.cooja.plugins.skins.GridVisualizerSkin</skin>
       <skin>org.contikios.cooja.plugins.skins.TrafficVisualizerSkin</skin>
       <skin>org.contikios.cooja.plugins.skins.UDGMVisualizerSkin</skin>
-      <viewport>2.1759832998036206 0.0 0.0 2.1759832998036206 -37.84561736607661 26.61878120999836</viewport>
+      <skin>org.contikios.cooja.plugins.skins.MoteTypeVisualizerSkin</skin>
+      <viewport>2.0234380488108594 0.0 0.0 2.0234380488108594 38.4899443858245 -82.2407271379765</viewport>
     </plugin_config>
-    <width>345</width>
-    <z>2</z>
-    <height>241</height>
+    <width>401</width>
+    <z>4</z>
+    <height>190</height>
     <location_x>1</location_x>
     <location_y>1</location_y>
   </plugin>
   <plugin>
     org.contikios.cooja.plugins.LogListener
     <plugin_config>
-      <filter />
+      <filter>ID:1</filter>
       <formatted_time />
       <coloring />
     </plugin_config>
-    <width>1093</width>
-<<<<<<< Updated upstream
-    <z>0</z>
-=======
-    <z>1</z>
->>>>>>> Stashed changes
-    <height>637</height>
-    <location_x>769</location_x>
-    <location_y>182</location_y>
+    <width>954</width>
+    <z>2</z>
+    <height>666</height>
+    <location_x>924</location_x>
+    <location_y>161</location_y>
   </plugin>
   <plugin>
     org.contikios.cooja.plugins.TimeLine
@@ -163,44 +135,41 @@
       <showRadioRXTX />
       <showRadioHW />
       <showLEDs />
-      <showWatchpoints />
-      <executionDetails />
-<<<<<<< Updated upstream
-      <zoomfactor>50000.0</zoomfactor>
-    </plugin_config>
-    <width>1873</width>
-    <z>1</z>
-    <height>185</height>
-    <location_x>3</location_x>
-    <location_y>824</location_y>
-=======
-      <zoomfactor>10000.0</zoomfactor>
+      <zoomfactor>20000.0</zoomfactor>
     </plugin_config>
     <width>1873</width>
     <z>3</z>
-    <height>181</height>
-    <location_x>0</location_x>
-    <location_y>849</location_y>
->>>>>>> Stashed changes
+    <height>166</height>
+    <location_x>6</location_x>
+    <location_y>826</location_y>
   </plugin>
   <plugin>
     org.contikios.cooja.plugins.RadioLogger
     <plugin_config>
-      <split>248</split>
+      <split>358</split>
       <formatted_time />
       <showdups>false</showdups>
       <hidenodests>false</hidenodests>
       <analyzers name="6lowpan" />
     </plugin_config>
-    <width>774</width>
-<<<<<<< Updated upstream
-    <z>2</z>
-=======
-    <z>4</z>
->>>>>>> Stashed changes
-    <height>536</height>
-    <location_x>1</location_x>
-    <location_y>285</location_y>
+    <width>688</width>
+    <z>5</z>
+    <height>639</height>
+    <location_x>0</location_x>
+    <location_y>189</location_y>
+  </plugin>
+  <plugin>
+    org.contikios.cooja.plugins.LogListener
+    <plugin_config>
+      <filter />
+      <formatted_time />
+      <coloring />
+    </plugin_config>
+    <width>920</width>
+    <z>0</z>
+    <height>668</height>
+    <location_x>4</location_x>
+    <location_y>159</location_y>
   </plugin>
 </simconf>
 

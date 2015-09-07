@@ -70,6 +70,7 @@ static struct pt pt;
 static struct rtimer reciever_powercycle_timer;
 static struct timer w;
 static unsigned int initial_rand_seed;
+static unsigned int initial_rand_seed_temp;
 static unsigned int blacklist;
 static unsigned short ack_len;
 static unsigned short neighbor_discovery_flag;
@@ -263,21 +264,22 @@ static char reception_powercycle(void)
 			off(0);
 			leds_off(7);
 		}
-		initial_rand_seed=(15213*initial_rand_seed)+11237;
+		printf("Slept at: %u  ", RTIMER_NOW());
+		initial_rand_seed_temp=(15213*initial_rand_seed)+11237;
 		/********** Makes node 1 to print it's sleeping period for the next cycle and the original seed to calculate it ********/
-		if (linkaddr_node_addr.u8[7]==1){
-			printf("SEED:%u  Sleep:%u  ",initial_rand_seed,initial_rand_seed%RTIMER_SECOND + RTIMER_SECOND/2);}
+		//if (linkaddr_node_addr.u8[7]==1){
+			printf("Sleep:%u (SEED:%u)\n",initial_rand_seed_temp%RTIMER_SECOND + RTIMER_SECOND/2, initial_rand_seed_temp);//}
 
 		/********** Makes node 1 to follow it's own powercycle schedule ant node 2 to follow the node 1's powercycle schedule **********/
 		if (linkaddr_node_addr.u8[7]==1){
-		rtimer_set(&reciever_powercycle_timer,(w_up_time+(initial_rand_seed%RTIMER_SECOND + RTIMER_SECOND/2)), 0,(void (*)(struct rtimer *, void *))reception_powercycle,NULL);
+		rtimer_set(&reciever_powercycle_timer,(w_up_time+(initial_rand_seed_temp%RTIMER_SECOND + RTIMER_SECOND/2)), 0,(void (*)(struct rtimer *, void *))reception_powercycle,NULL);
 		} else {
 			neighbor_state *test=list_head(Neighbors);
 			if (test->wake_time_seconds!=NULL){
 				rtimer_set(&reciever_powercycle_timer,(get_neighbor_wake_up_time(get_neighbor_state(Neighbors, test->node_link_addr))), 0,(void (*)(struct rtimer *, void *))reception_powercycle,NULL);
 				leds_off(7);
 			} else {
-				rtimer_set(&reciever_powercycle_timer,(w_up_time+(initial_rand_seed%RTIMER_SECOND + RTIMER_SECOND/2)), 0,(void (*)(struct rtimer *, void *))reception_powercycle,NULL);
+				rtimer_set(&reciever_powercycle_timer,(w_up_time+(initial_rand_seed_temp%RTIMER_SECOND + RTIMER_SECOND/2)), 0,(void (*)(struct rtimer *, void *))reception_powercycle,NULL);
 			}
 		}
 		/******* The only remaining line of this part that will pass to the final code is the one following the if() sentence that ends before this comment *****/
@@ -292,6 +294,7 @@ static char reception_powercycle(void)
 		 * which will be transmitted when the state is requested through an ACK */
 		w_up_time=RTIMER_NOW();
 		time_in_seconds=clock_seconds();
+		initial_rand_seed=initial_rand_seed_temp;
 		/* TODO: Get the blacklist and embed it into the beacon. Now, the value for the blacklist is fixed to 100 */
 		packetbuf_set_attr(PACKETBUF_ATTR_NODE_BLACKLIST, 0x00F0);
 		blacklist=packetbuf_attr(PACKETBUF_ATTR_NODE_BLACKLIST);
@@ -300,9 +303,9 @@ static char reception_powercycle(void)
 		packetbuf_set_attr(PACKETBUF_ATTR_PACKET_ID, sequence_number);
 		/*******************/
 		/********** Makes node 1 to print the time he woke-up in secs and tics. For debuging purposes only ********/
-		if (linkaddr_node_addr.u8[7]==1){
-			printf("secs:%u    ",time_in_seconds);
-			printf("tics:%u \n",w_up_time);}
+		//if (linkaddr_node_addr.u8[7]==1){
+			printf("secs:%u ",time_in_seconds);
+			printf("tics:%u ",w_up_time);//}
 		/*********************************************************************************************************/
 		/* Create beacon and transmit it */
 		uint8_t beacon_data[12] = {0,0,0,0,0,0,0,0,0,0,0};
@@ -501,7 +504,7 @@ send_one_packet(mac_callback_t sent, void *ptr)
 														n->n=(long int)((long int)(local_time_tics)-(long int)(t_tic));}
 													else{
 														n->m=(int)((long int)(local_time_seconds)-(long int)(c_t_sec));}
-													printf("UPDATED=%d\n",n->node_link_addr.u8[7]);
+													//printf("UPDATED=%d\n",n->node_link_addr.u8[7]);
 													/*printf("UPDATED=%d  L_tics=%u  wake_tics=%u   L_sec=%u  wake_sec=%u \n",
 															n->node_link_addr.u8[7], local_time_tics, n->wake_time_tics , local_time_seconds, n->wake_time_seconds);*/
 													//printf("NeighborUpdated=%d  L_tics=%u  N_tics=%u  N(diff)=%ld   L_sec=%u  N_sec=%u   M(diff)=%d \n",
@@ -686,7 +689,7 @@ packet_input(void)
 						ackdata[10] = (t_seconds>>8) & 0xff;
 						ackdata[11] = 0;/*Se deja vacio para colocar el tiempo actual en tics a nivel fisico*/
 						ackdata[12] = 0;
-						//printf("Wake-time secs: %u  ",time_in_seconds);
+						printf("\nState_SENT\n");
 						//printf("Wake-time tics %u  initial_rand_seed: %u\n",w_up_time, initial_rand_seed);
 						packetbuf_set_attr( PACKETBUF_ATTR_NODE_RADIO_TIMESTAMP_FLAG, 1);/*Se activa el timestamp a nivel fisico*/
 						NETSTACK_RADIO.send(ackdata, ack_len);
