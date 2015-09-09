@@ -14,7 +14,7 @@ int check_if_neighbor_exist(list_t Neighbors,linkaddr_t addr)
 		if(linkaddr_cmp(&n_addr,&addr)){
 			return 1;
 		}
-		 s = list_item_next(s);
+		s = list_item_next(s);
 	}
 	return 0;
 }
@@ -24,24 +24,24 @@ neighbor_state get_neighbor_state (list_t  Neighbors,linkaddr_t addr)
 	neighbor_state st;
 	linkaddr_t n_addr;
 	s=list_head(Neighbors);
-		while(s!=NULL)
-		{
+	while(s!=NULL)
+	{
 
-			n_addr=s->node_link_addr;
+		n_addr=s->node_link_addr;
 
-			if(linkaddr_cmp(&n_addr,&addr)){
+		if(linkaddr_cmp(&n_addr,&addr)){
 
-				st.blacklist=s->blacklist;
-				st.wake_time_tics=s->wake_time_tics;
-				st.m=s->m;
-				st.last_seed=s->last_seed;
-				st.last_channel=s->last_channel;
-				st.wake_time_seconds=s->wake_time_seconds;
-				st.n=s->n;
-				linkaddr_copy(&st.node_link_addr,&addr);
-				return st;
-			}
-			 s = list_item_next(s);
+			st.blacklist=s->blacklist;
+			st.wake_time_tics=s->wake_time_tics;
+			st.m=s->m;
+			st.last_seed=s->last_seed;
+			st.last_channel=s->last_channel;
+			st.wake_time_seconds=s->wake_time_seconds;
+			st.n=s->n;
+			linkaddr_copy(&st.node_link_addr,&addr);
+			return st;
 		}
-		return st;
+		s = list_item_next(s);
+	}
+	return st;
 }
