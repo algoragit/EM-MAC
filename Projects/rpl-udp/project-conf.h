@@ -5,3 +5,4 @@
 #define NETSTACK_CONF_FRAMER	framer_emmac
 #define CC2420_CONF_AUTOACK 0
 #define DEBUG 1
+#define CSMA_MAX_MAC_TRANSMISSIONS 3
