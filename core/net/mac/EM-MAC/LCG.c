@@ -41,11 +41,10 @@ unsigned int get_neighbor_wake_up_time(neighbor_state v)
 	unsigned long local_seconds = clock_seconds();
 	unsigned int iteration=0;
 	unsigned int seed_temp;
-	printf("%d. Neighbor: %d  STARTING point: tics=%u secs=%u seed=%u LOCAL_SECS:%lu\n",
-			iteration, v.node_link_addr.u8[7], next_wake_tics, next_wake_secs, current_seed, local_seconds);
-	//printf("Neighbor: %d   local seconds: %u next_wake_secs: %u  local_tics: %u   next_wake_tics: %u\n", v.node_link_addr.u8[7], local_seconds, next_wake_secs, RTIMER_NOW(), next_wake_tics);
+	printf("%d.%d  STARTING point: secs=%u tics=%u LOCAL_SECS:%lu\n",
+			iteration, v.node_link_addr.u8[7], next_wake_secs, next_wake_tics, local_seconds);
 	unsigned int next_wake_tics_temp=0;
-	while ((next_wake_secs < (local_seconds - diff_secs)) || ((next_wake_tics < (RTIMER_NOW()-diff_secs)) && (next_wake_secs == (local_seconds - diff_secs)))){
+	while ((next_wake_secs < (local_seconds - diff_secs)) || ((next_wake_tics < (unsigned int)((long int)(RTIMER_NOW())-diff_tics)) && (next_wake_secs == (local_seconds - diff_secs)))){
 		iteration++;
 		seed_temp=current_seed;
 		current_seed=((15213*current_seed)+11237);
@@ -102,8 +101,8 @@ unsigned int get_neighbor_wake_up_time(neighbor_state v)
 		//printf(" next_wake: %u\n", next_wake_tics);
 	}
 
-	printf("%u.%d c_seed=%u secs=%u tics_t=%u tics_a=%u L_SECS:%lu L_TICS:%u DIFF_TICS:%ld\n",
-			iteration, v.node_link_addr.u8[7], current_seed, next_wake_secs, next_wake_tics_temp, next_wake_tics, local_seconds, RTIMER_NOW(), diff_tics);
+	printf("%u.%d secs=%u tics_a=%u tics_t=%u L_SECS:%lu L_TICS:%u DIFF_TICS:%ld DIFF_SECS:%d\n",
+			iteration, v.node_link_addr.u8[7], next_wake_secs, next_wake_tics, next_wake_tics_temp, local_seconds, RTIMER_NOW(), diff_tics, diff_secs);
 	//printf("%u\n", RTIMER_NOW()-start_tics);
 	/*printf("Test Channels: \n");
 	unsigned int seed=linkaddr_node_addr.u8[7];
@@ -116,6 +115,5 @@ unsigned int get_neighbor_wake_up_time(neighbor_state v)
 	}
 	printf("\n");*/
 
-	leds_blink();
 	return next_wake_tics+diff_tics;
 }

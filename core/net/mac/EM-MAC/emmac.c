@@ -252,6 +252,7 @@ static void neighbor_discovery(void)
 		test = list_item_next(test);
 	}
 	/************ end of neighbor list printing **********************************************************/
+
 }
 /******************************************************************************/
 /*La siguiente funcion se usa para controlar el ciclo util de radio*/
@@ -264,15 +265,14 @@ static char reception_powercycle(void)
 			off(0);
 			leds_off(7);
 		}
-		printf("Slept at: %u  ", RTIMER_NOW());
 		initial_rand_seed_temp=(15213*initial_rand_seed)+11237;
 		/********** Makes node 1 to print it's sleeping period for the next cycle and the original seed to calculate it ********/
 		//if (linkaddr_node_addr.u8[7]==1){
-			printf("Sleep:%u (SEED:%u)\n",initial_rand_seed_temp%RTIMER_SECOND + RTIMER_SECOND/2, initial_rand_seed_temp);//}
+		printf("Sleep:%u (SEED:%u)\n",initial_rand_seed_temp%RTIMER_SECOND + RTIMER_SECOND/2, initial_rand_seed_temp);//}
 
 		/********** Makes node 1 to follow it's own powercycle schedule ant node 2 to follow the node 1's powercycle schedule **********/
 		if (linkaddr_node_addr.u8[7]==1){
-		rtimer_set(&reciever_powercycle_timer,(w_up_time+(initial_rand_seed_temp%RTIMER_SECOND + RTIMER_SECOND/2)), 0,(void (*)(struct rtimer *, void *))reception_powercycle,NULL);
+			rtimer_set(&reciever_powercycle_timer,(w_up_time+(initial_rand_seed_temp%RTIMER_SECOND + RTIMER_SECOND/2)), 0,(void (*)(struct rtimer *, void *))reception_powercycle,NULL);
 		} else {
 			neighbor_state *test=list_head(Neighbors);
 			if (test->wake_time_seconds!=NULL){
@@ -304,8 +304,8 @@ static char reception_powercycle(void)
 		/*******************/
 		/********** Makes node 1 to print the time he woke-up in secs and tics. For debuging purposes only ********/
 		//if (linkaddr_node_addr.u8[7]==1){
-			printf("secs:%u ",time_in_seconds);
-			printf("tics:%u ",w_up_time);//}
+		printf("secs:%u ",time_in_seconds);
+		printf("tics:%u ",w_up_time);//}
 		/*********************************************************************************************************/
 		/* Create beacon and transmit it */
 		uint8_t beacon_data[12] = {0,0,0,0,0,0,0,0,0,0,0};
@@ -415,7 +415,6 @@ send_one_packet(mac_callback_t sent, void *ptr)
 	packetbuf_set_attr( PACKETBUF_ATTR_NODE_STATE_FLAG, 0);
 	packetbuf_set_attr(PACKETBUF_ATTR_MAC_ACK,1);
 
-	//printf("ACK= E:%d, BC:%d, State:%d\n", !exist, !is_broadcast,n_state.m==NULL);
 	if((!exist && !is_broadcast) || (n_state.m==NULL && !is_broadcast)){/*Si el vecino no existe y el paquete no es de broadcast o no se ha completado el estado del vecinoy el paquete no es de broadcast */
 		packetbuf_set_attr( PACKETBUF_ATTR_NODE_STATE_FLAG, 1);
 		printf("ACK_STATE_RQ\n");
@@ -463,7 +462,6 @@ send_one_packet(mac_callback_t sent, void *ptr)
 						if(NETSTACK_RADIO.receiving_packet() ||				//Ninguna de estas condiciones se cumple cuando se envía un paquete de datos.
 								NETSTACK_RADIO.pending_packet() ||
 								NETSTACK_RADIO.channel_clear() == 0) {
-							//printf("Inside first if rx_pkt(%d) pnd_pkt(%d) cca(%d))\n", NETSTACK_RADIO.receiving_packet() , NETSTACK_RADIO.pending_packet(), NETSTACK_RADIO.channel_clear());
 							int len;
 							uint8_t ackbuf[ack_len];
 							wt = RTIMER_NOW();
@@ -475,13 +473,6 @@ send_one_packet(mac_callback_t sent, void *ptr)
 									unsigned int local_time_seconds = clock_seconds();
 									linkaddr_t ack_addr_receiver;
 									linkaddr_copy(&ack_addr_receiver,packetbuf_addr(PACKETBUF_ADDR_RECEIVER));
-									//printf("ACK received from %d of length; %d\n", ack_addr_receiver.u8[7], len);
-									/*int i=0;
-									for (i=0;i<ack_len+2;i++){
-										printf("%2x", ackbuf[i]);
-									}*/
-									//printf(" len: %d ack_len: %d dsn: %d, ackbuf[2]: %d\n", len, ack_len, dsn, ackbuf[2]);
-									//printf("addr.u8[7]: %d, n->node_link_address.u8[7]: %d\n", addr.u8[7], n->node_link_addr.u8[7]);
 
 									if(len == ack_len && ackbuf[2] == dsn) {
 										/* Ack received */
@@ -493,9 +484,7 @@ send_one_packet(mac_callback_t sent, void *ptr)
 											unsigned int c_t_sec = ackbuf[9]+ (ackbuf[10] << 8); //tiempo actual en seconds
 											t_tic=ackbuf[11]+ (ackbuf[12] << 8); //tiempo actual en tics
 											/*Sobreescribimos o escribimos la informacion de estado correspondiente al vecino en cuestion*/
-											//printf("list of Neighbors: ");
 											for(n = list_head(Neighbors); n != NULL; n = list_item_next(n)) {
-												//printf("%d ", n->node_link_addr.u8[7]);
 												if(linkaddr_cmp(&ack_addr_receiver, &n->node_link_addr)) {
 													n->wake_time_tics=w_time;
 													n->wake_time_seconds=t_sec;
@@ -504,13 +493,13 @@ send_one_packet(mac_callback_t sent, void *ptr)
 														n->n=(long int)((long int)(local_time_tics)-(long int)(t_tic));}
 													else{
 														n->m=(int)((long int)(local_time_seconds)-(long int)(c_t_sec));}
-													//printf("UPDATED=%d\n",n->node_link_addr.u8[7]);
-													/*printf("UPDATED=%d  L_tics=%u  wake_tics=%u   L_sec=%u  wake_sec=%u \n",
-															n->node_link_addr.u8[7], local_time_tics, n->wake_time_tics , local_time_seconds, n->wake_time_seconds);*/
-													//printf("NeighborUpdated=%d  L_tics=%u  N_tics=%u  N(diff)=%ld   L_sec=%u  N_sec=%u   M(diff)=%d \n",
-													//	n->node_link_addr.u8[7], local_time_tics, t_tic, n->n, local_time_seconds, t_sec, n->m);
-													//printf("Neighbor Updated: %d  Seed: %u Wake_Secs: %u   Wake_Tics: %u  M: %u    N: %u   BlackList: %x\n", n->node_link_addr.u8[7], n->last_seed, n->wake_time_tics,
-													//												n->wake_time_seconds, n->m, n->n, n->blacklist);
+													/* If the values in ticks exchanged by the nodes are not distant from each other
+													but they are at both sides of a second frontier (e.g. 32768 and 0 for the Zolertia Z1),
+													then we should not take into account that last second because it would introduce errors
+													in the time prediction mechanism. The same applies for a new neighbor. */
+													if (abs(n->n) < RTIMER_SECOND/2 && n->m != 0){
+														n->m = (abs(n->m)-1) * (n->m/(abs(n->m)));
+													}
 													break;
 												}
 											}
@@ -530,39 +519,14 @@ send_one_packet(mac_callback_t sent, void *ptr)
 													n->n=(long int)((long int)(local_time_tics)-(long int)(t_tic));}
 												else{
 													n->m=(int)((long int)(local_time_seconds)-(long int)(c_t_sec));}
+												if (abs(n->n) < RTIMER_SECOND/2 && n->m != 0){
+													n->m = (abs(n->m)-1) * (n->m/(abs(n->m)));
+												}
+
 												list_add(Neighbors, n);
-												/*printf("ADDED=%d  L_tics=%u  wake_tics=%u   L_sec=%u  wake_sec=%u \n",
-													n->node_link_addr.u8[7], local_time_tics, n->wake_time_tics , local_time_seconds, n->wake_time_seconds);*/
 											}
-											/*Desde aqui hasta la etiqueta prueba no forma parte del codigo. Se usa pra probar las funcionalidades.*/
-
-											//for (i=1; i<10;i++){
-											//printf("%d. neighbor: %d, last_seed:%u get_neighbor_wake_up_time: %u\n", i,n->last_seed,n->node_link_addr.u8[7], get_neighbor_wake_up_time(get_neighbor_state(Neighbors, n->node_link_addr)));
-											//}
-
-											/*ack_addr_receiver.u8[0]=193;
-											ack_addr_receiver.u8[1]=12;
-											ack_addr_receiver.u8[2]=0;
-											ack_addr_receiver.u8[3]=0;
-											ack_addr_receiver.u8[4]=0;
-											ack_addr_receiver.u8[5]=0;
-											ack_addr_receiver.u8[6]=0;
-											ack_addr_receiver.u8[7]=1;
-											v= get_neighbor_state (Neighbors, ack_addr_receiver);*/
-											//printf("RX secs: %u\n",v.wake_time_seconds);
-											//printf("n: %u\n",v.n);
-											//printf("m: %u\n",v.m);
-											//printf("RX tics: %u\n",v.wake_time_tics);
-											/*PRUEBA*/
 										}
 										ret = MAC_TX_OK;
-										/*if (linkaddr_node_addr.u8[7]==2){
-											neighbor_state *test;
-											for(test = list_head(Neighbors); test != NULL; test = list_item_next(test)) {
-												printf("Neighbor=%d  L_tics=%u  wake_tics=%u   L_sec=%u  wake_sec=%u \n",
-														test->node_link_addr.u8[7], local_time_tics, test->wake_time_tics , local_time_seconds, test->wake_time_seconds);
-											}
-										}*/
 										break;		// This breaks the While after an ACK has been received and processed.
 									} else {
 										/* Not an ACK or ACK not for us: collision */
@@ -582,7 +546,6 @@ send_one_packet(mac_callback_t sent, void *ptr)
 				ret = MAC_TX_COLLISION;
 				break;
 			default:
-
 				ret = MAC_TX_ERR;
 				break;
 			}
