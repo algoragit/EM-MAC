@@ -99,7 +99,7 @@ create_frame(int type, int do_create)
 
 	if(!initialized) {
 		initialized = 1;
-		mac_dsn = random_rand() & 0xff;
+		mac_dsn = random_rand()*linkaddr_node_addr.u8[7];
 	}
 	/* Build the FCF. */
 

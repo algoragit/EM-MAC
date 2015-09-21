@@ -32,49 +32,82 @@
 #include "contiki-net.h"
 #include "net/ip/uip.h"
 #include "net/rpl/rpl.h"
+#include "net/linkaddr.h"
 
 #include "net/netstack.h"
 #include "dev/button-sensor.h"
+#include "dev/serial-line.h"
+#if CONTIKI_TARGET_Z1
+#include "dev/uart0.h"
+#else
+#include "dev/uart1.h"
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include "../rpl-collect_muchmac/collect-common.h"
+#include "collect-view.h"
 
 #define DEBUG DEBUG_PRINT
 #include "net/ip/uip-debug.h"
 
 #define UIP_IP_BUF   ((struct uip_ip_hdr *)&uip_buf[UIP_LLH_LEN])
 
-#define UDP_CLIENT_PORT	8765
-#define UDP_SERVER_PORT	5678
-
-#define UDP_EXAMPLE_ID  190
+#define UDP_CLIENT_PORT 8775
+#define UDP_SERVER_PORT 5688
 
 static struct uip_udp_conn *server_conn;
 
 PROCESS(udp_server_process, "UDP server process");
-AUTOSTART_PROCESSES(&udp_server_process);
+AUTOSTART_PROCESSES(&udp_server_process,&collect_common_process);
+/*---------------------------------------------------------------------------*/
+void
+collect_common_set_sink(void)
+{
+}
+/*---------------------------------------------------------------------------*/
+void
+collect_common_net_print(void)
+{
+  printf("I am sink!\n");
+}
+/*---------------------------------------------------------------------------*/
+void
+collect_common_send(void)
+{
+  /* Server never sends */
+}
+/*---------------------------------------------------------------------------*/
+void
+collect_common_net_init(void)
+{
+#if CONTIKI_TARGET_Z1
+  uart0_set_input(serial_line_input_byte);
+#else
+  uart1_set_input(serial_line_input_byte);
+#endif
+  serial_line_init();
+
+  PRINTF("I am sink!\n");
+}
 /*---------------------------------------------------------------------------*/
 static void
 tcpip_handler(void)
 {
-  char *appdata;
-  char buf[8];
+  uint8_t *appdata;
+  linkaddr_t sender;
+  uint8_t seqno;
+  uint8_t hops;
 
   if(uip_newdata()) {
-    appdata = (char *)uip_appdata;
-    appdata[uip_datalen()] = 0;
-    PRINTF("DATA recv '%s' from ", appdata);
-    PRINTF("%d",
-           UIP_IP_BUF->srcipaddr.u8[sizeof(UIP_IP_BUF->srcipaddr.u8) - 1]);
-    PRINTF("\n");
-//#if SERVER_REPLY
-    PRINTF("DATA sending reply\n");
-    uip_ipaddr_copy(&server_conn->ripaddr, &UIP_IP_BUF->srcipaddr);
-    sprintf(buf, "Reply %c%c",appdata[6],appdata[7]);
-    uip_udp_packet_send(server_conn, buf, sizeof(buf));
-    uip_create_unspecified(&server_conn->ripaddr);
-//#endif
+    appdata = (uint8_t *)uip_appdata;
+    sender.u8[0] = UIP_IP_BUF->srcipaddr.u8[15];
+    sender.u8[1] = UIP_IP_BUF->srcipaddr.u8[14];
+    seqno = *appdata;
+    hops = uip_ds6_if.cur_hop_limit - UIP_IP_BUF->ttl + 1;
+    collect_common_recv(&sender, seqno, hops,
+                        appdata + 2, uip_datalen() - 2);
   }
 }
 /*---------------------------------------------------------------------------*/
@@ -92,7 +125,7 @@ print_local_addresses(void)
       PRINTF("\n");
       /* hack to make address "final" */
       if (state == ADDR_TENTATIVE) {
-	uip_ds6_if.addr_list[i].state = ADDR_PREFERRED;
+        uip_ds6_if.addr_list[i].state = ADDR_PREFERRED;
       }
     }
   }
@@ -112,27 +145,8 @@ PROCESS_THREAD(udp_server_process, ev, data)
   PRINTF("UDP server started\n");
 
 #if UIP_CONF_ROUTER
-/* The choice of server address determines its 6LoPAN header compression.
- * Obviously the choice made here must also be selected in udp-client.c.
- *
- * For correct Wireshark decoding using a sniffer, add the /64 prefix to the 6LowPAN protocol preferences,
- * e.g. set Context 0 to aaaa::.  At present Wireshark copies Context/128 and then overwrites it.
- * (Setting Context 0 to aaaa::1111:2222:3333:4444 will report a 16 bit compressed address of aaaa::1111:22ff:fe33:xxxx)
- * Note Wireshark's IPCMV6 checksum verification depends on the correct uncompressed addresses.
- */
- 
-#if 0
-/* Mode 1 - 64 bits inline */
-   uip_ip6addr(&ipaddr, 0xaaaa, 0, 0, 0, 0, 0, 0, 1);
-#elif 1
-/* Mode 2 - 16 bits inline */
-  uip_ip6addr(&ipaddr, 0xaaaa, 0, 0, 0, 0, 0x00ff, 0xfe00, 1);
-#else
-/* Mode 3 - derived from link local (MAC) address */
-  uip_ip6addr(&ipaddr, 0xaaaa, 0, 0, 0, 0, 0, 0, 0);
-  uip_ds6_set_addr_iid(&ipaddr, &uip_lladdr);
-#endif
-
+  uip_ip6addr(&ipaddr, 0xaaaa, 0, 0, 0, 0, 0, 0, 1);
+  /* uip_ds6_set_addr_iid(&ipaddr, &uip_lladdr); */
   uip_ds6_addr_add(&ipaddr, 0, ADDR_MANUAL);
   root_if = uip_ds6_addr_lookup(&ipaddr);
   if(root_if != NULL) {
@@ -145,18 +159,14 @@ PROCESS_THREAD(udp_server_process, ev, data)
     PRINTF("failed to create a new RPL DAG\n");
   }
 #endif /* UIP_CONF_ROUTER */
-  
+
   print_local_addresses();
 
-  /* The data sink runs with a 100% duty cycle in order to ensure high 
+  /* The data sink runs with a 100% duty cycle in order to ensure high
      packet reception rates. */
-  NETSTACK_MAC.off(1);
+  NETSTACK_RDC.off(1);
 
   server_conn = udp_new(NULL, UIP_HTONS(UDP_CLIENT_PORT), NULL);
-  if(server_conn == NULL) {
-    PRINTF("No UDP connection available, exiting the process!\n");
-    PROCESS_EXIT();
-  }
   udp_bind(server_conn, UIP_HTONS(UDP_SERVER_PORT));
 
   PRINTF("Created a server connection with remote address ");

@@ -878,7 +878,7 @@ PROCESS_THREAD(cc2420_process, ev, data)
     len = cc2420_read(packetbuf_dataptr(), PACKETBUF_SIZE);
     
     packetbuf_set_datalen(len);
-    
+
     NETSTACK_RDC.input();
   }
 
