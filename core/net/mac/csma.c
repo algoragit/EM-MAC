@@ -291,7 +291,7 @@ packet_sent(void *ptr, int status, int num_transmissions)
              transmitting this packet. */
           queuebuf_update_attr_from_packetbuf(q->buf);
         } else {
-          PRINTF("csma: drop with status %d after %d transmissions, %d collisions\n",
+          printf("csma: drop with status %d after %d transmissions, %d collisions\n",
                  status, n->transmissions, n->collisions);
           free_packet(n, q);
           mac_call_sent_callback(sent, cptr, status, num_tx);
