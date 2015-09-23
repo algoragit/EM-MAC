@@ -71,7 +71,7 @@ tcpip_handler(void)
 //#if SERVER_REPLY
     PRINTF("DATA sending reply\n");
     uip_ipaddr_copy(&server_conn->ripaddr, &UIP_IP_BUF->srcipaddr);
-    sprintf(buf, "Reply %c%c",appdata[6],appdata[7]);
+    sprintf(buf, "Reply %c%c%c",appdata[6],appdata[7],appdata[8]);
     uip_udp_packet_send(server_conn, buf, sizeof(buf));
     uip_create_unspecified(&server_conn->ripaddr);
 //#endif

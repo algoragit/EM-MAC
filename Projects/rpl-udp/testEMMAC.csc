@@ -78,41 +78,13 @@
       <breakpoints />
       <interface_config>
         org.contikios.cooja.interfaces.Position
-        <x>63.60151510113943</x>
-        <y>66.29341222759592</y>
+        <x>74.34230436507488</x>
+        <y>54.28900069731514</y>
         <z>0.0</z>
       </interface_config>
       <interface_config>
         org.contikios.cooja.mspmote.interfaces.MspMoteID
         <id>2</id>
-      </interface_config>
-      <motetype_identifier>z12</motetype_identifier>
-    </mote>
-    <mote>
-      <breakpoints />
-      <interface_config>
-        org.contikios.cooja.interfaces.Position
-        <x>33.218106251404855</x>
-        <y>76.04607545998867</y>
-        <z>0.0</z>
-      </interface_config>
-      <interface_config>
-        org.contikios.cooja.mspmote.interfaces.MspMoteID
-        <id>3</id>
-      </interface_config>
-      <motetype_identifier>z12</motetype_identifier>
-    </mote>
-    <mote>
-      <breakpoints />
-      <interface_config>
-        org.contikios.cooja.interfaces.Position
-        <x>52.46800670929406</x>
-        <y>37.08974973607651</y>
-        <z>0.0</z>
-      </interface_config>
-      <interface_config>
-        org.contikios.cooja.mspmote.interfaces.MspMoteID
-        <id>4</id>
       </interface_config>
       <motetype_identifier>z12</motetype_identifier>
     </mote>
@@ -144,7 +116,7 @@
   <plugin>
     org.contikios.cooja.plugins.LogListener
     <plugin_config>
-      <filter>ID:4</filter>
+      <filter>RES=</filter>
       <formatted_time />
       <coloring />
     </plugin_config>
@@ -159,17 +131,15 @@
     <plugin_config>
       <mote>0</mote>
       <mote>1</mote>
-      <mote>2</mote>
-      <mote>3</mote>
       <showRadioRXTX />
       <showRadioHW />
       <showLEDs />
       <showLogOutput />
       <executionDetails />
-      <zoomfactor>20.0</zoomfactor>
+      <zoomfactor>1000.0</zoomfactor>
     </plugin_config>
     <width>1873</width>
-    <z>1</z>
+    <z>0</z>
     <height>176</height>
     <location_x>-10</location_x>
     <location_y>144</location_y>
@@ -184,7 +154,7 @@
       <analyzers name="6lowpan" />
     </plugin_config>
     <width>1009</width>
-    <z>0</z>
+    <z>1</z>
     <height>718</height>
     <location_x>848</location_x>
     <location_y>315</location_y>
