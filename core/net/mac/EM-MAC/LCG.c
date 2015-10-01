@@ -118,8 +118,8 @@ unsigned int get_neighbor_wake_up_time(neighbor_state v, uint8_t *neighbor_chann
 		printf("%d ", seed % (unsigned int)(16) + 11);
 		if (i==15) printf("\n");
 	}*/
-	printf("%u. ", iteration);
-	printf("next_wake: %u %ld %u\n", next_wake_tics, diff_tics, RTIMER_NOW());
+	printf("%u.%d ", iteration, v.node_link_addr.u8[7]);
+	printf("next_wake: %u %ld %u sec_diff:%u\n", next_wake_tics, diff_tics, RTIMER_NOW(), next_wake_secs-v.wake_time_seconds);
 	*neighbor_channel=channel_list[channel_list_index];
 	return next_wake_tics+diff_tics;
 }
