@@ -392,7 +392,7 @@ static char reception_powercycle(void)
 						NETSTACK_RADIO.channel_clear() == 0){}*/
 				if (NETSTACK_RADIO.pending_packet()){
 					//printf("%u\n", RTIMER_NOW());
-					rtimer_set(&reciever_powercycle_timer,RTIMER_NOW()+ 100, 0,(void (*)(struct rtimer *, void *))reception_powercycle,NULL);
+					//rtimer_set(&reciever_powercycle_timer,RTIMER_NOW()+ 100, 0,(void (*)(struct rtimer *, void *))reception_powercycle,NULL);
 					PT_YIELD(&pt);
 					//printf("%u\n", RTIMER_NOW());
 				}
@@ -551,7 +551,7 @@ send_one_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver)
 	packetbuf_set_attr( PACKETBUF_ATTR_NODE_STATE_FLAG, 0);
 	packetbuf_set_attr(PACKETBUF_ATTR_MAC_ACK,1);
 
-	if((!exist && !is_broadcast) || (n_state.m==NULL && !is_broadcast)){/*Si el vecino no existe y el paquete no es de broadcast o no se ha completado el estado del vecinoy el paquete no es de broadcast */
+	if((!exist /*&& !is_broadcast*/) || (n_state.m==NULL /*&& !is_broadcast*/)){/*Si el vecino no existe y el paquete no es de broadcast o no se ha completado el estado del vecinoy el paquete no es de broadcast */
 		packetbuf_set_attr( PACKETBUF_ATTR_NODE_STATE_FLAG, 1);
 		//printf("ACK_STATE_RQ\n");
 	}
@@ -580,14 +580,16 @@ send_one_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver)
          sending with auto ack. */
 			leds_on(LEDS_GREEN);
 			ret = MAC_TX_COLLISION;
+			printf("sent Collision before sending\n");
+			return 3;
 		}
 		else {
 			switch(NETSTACK_RADIO.transmit(packetbuf_totlen())) {
 			case RADIO_TX_OK:
-				if(is_broadcast) {
+				/*if(is_broadcast) {
 					// BROADCAST packets doesn't require ACK, so we automatically return with successful transmission result
 					ret = MAC_TX_OK;
-				} else {
+				} else {*/
 					// Check for ACK
 					wt = RTIMER_NOW();
 					ret = MAC_TX_NOACK;
@@ -680,12 +682,13 @@ send_one_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver)
 							break;
 						}
 					}
-				}
+				//}
 				break;
 			case RADIO_TX_COLLISION:
-				printf("Collision after TX\n");
+				printf("sent Collision after TX\n");
 				ret = MAC_TX_COLLISION;
-				break;
+				return 3;
+				//break;
 			default:
 
 				ret = MAC_TX_ERR;
@@ -769,7 +772,13 @@ send_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver)
 	waiting_to_transmit=0;
 	//printf("n_ch: %d\n", neighbor_channel);
 	NETSTACK_RADIO.set_value(RADIO_PARAM_CHANNEL, neighbor_channel);
-	return send_one_packet(sent, ptr, receiver);
+	int result=3;
+	int sent_times=0;
+	while (result==3){
+		printf("sent %d times\n", ++sent_times);
+		result=send_one_packet(sent, ptr, receiver);
+	}
+	return result;
 }
 /*---------------------------------------------------------------------------*/
 static void
@@ -831,22 +840,22 @@ packet_input(void)
 	}*/if(0){}
 	else{
 		if(NETSTACK_FRAMER.parse() < 0) {
-			PRINTF("emmac: failed to parse %u\n", packetbuf_datalen());
-		} else if(!linkaddr_cmp(packetbuf_addr(PACKETBUF_ADDR_RECEIVER),
+			printf("emmac: failed to parse %u\n", packetbuf_datalen());
+		} else /*if(!linkaddr_cmp(packetbuf_addr(PACKETBUF_ADDR_RECEIVER),
 				&linkaddr_node_addr) &&
 				!packetbuf_holds_broadcast()) {
 
-			/*Si se entra aqui es que el paquete no era para nosotros*/
+			//Si se entra aqui es que el paquete no era para nosotros
 			PRINTF("emmac: not for us\n");
 
-		} else {
+		} else */{
 			printf("RX:%d\n", original_dataptr[2]);
 			int duplicate = 0;
 			/* Check for duplicate packet. */
 			duplicate = mac_sequence_is_duplicate();
 			if(duplicate && original_dataptr[0]!=0) {
 				// Si el paquete recibido es un duplicado entonces lo desechamos
-				PRINTF("emmac: drop duplicate link layer packet %u\n",
+				printf("emmac: drop duplicate link layer packet %u\n",
 						packetbuf_attr(PACKETBUF_ATTR_PACKET_ID));
 			} else {
 				mac_sequence_register_seqno();
@@ -855,10 +864,11 @@ packet_input(void)
 			if(!duplicate) {
 				frame802154_t recieved_frame;
 				frame_emmac_parse(original_dataptr, original_datalen, &recieved_frame);
+				printf("sent for me? %d\n", recieved_frame.fcf.ack_required != 0);
 				if(recieved_frame.fcf.frame_type == FRAME802154_DATAFRAME &&
-						recieved_frame.fcf.ack_required != 0 &&
-						linkaddr_cmp((linkaddr_t *)&recieved_frame.dest_addr,
-								&linkaddr_node_addr)) {/*Si la trama recibida es de datos y si se requiere ACK y si la direccion del nodo es igual a la direccion de destino de la trama recibida*/
+						/*recieved_frame.fcf.ack_required != 0 &&*/
+						(linkaddr_cmp((linkaddr_t *)&recieved_frame.dest_addr,
+								&linkaddr_node_addr) || packetbuf_holds_broadcast())) {/*Si la trama recibida es de datos y si se requiere ACK y si la direccion del nodo es igual a la direccion de destino de la trama recibida*/
 					uint8_t ackdata[14] = {0};
 					unsigned int t_seconds = (unsigned int)(clock_seconds());
 					if(recieved_frame.fcf.state_flag){
