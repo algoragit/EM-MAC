@@ -551,14 +551,14 @@ send_one_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver)
 	packetbuf_set_attr( PACKETBUF_ATTR_NODE_STATE_FLAG, 0);
 	packetbuf_set_attr(PACKETBUF_ATTR_MAC_ACK,1);
 
-	if((!exist /*&& !is_broadcast*/) || (n_state.m==NULL /*&& !is_broadcast*/)){/*Si el vecino no existe y el paquete no es de broadcast o no se ha completado el estado del vecinoy el paquete no es de broadcast */
+	//if((!exist /*&& !is_broadcast*/) || (n_state.m==NULL /*&& !is_broadcast*/)){/*Si el vecino no existe y el paquete no es de broadcast o no se ha completado el estado del vecinoy el paquete no es de broadcast */
 		packetbuf_set_attr( PACKETBUF_ATTR_NODE_STATE_FLAG, 1);
 		//printf("ACK_STATE_RQ\n");
-	}
+	/*}
 	ack_len=3;
-	if( packetbuf_attr(PACKETBUF_ATTR_NODE_STATE_FLAG)){
+	if( packetbuf_attr(PACKETBUF_ATTR_NODE_STATE_FLAG)){*/
 		ack_len=14;
-	}
+	//}
 
 	if(NETSTACK_FRAMER.create() < 0) {/*Se llama al framer para crea la trama*/
 		/* Failed to allocate space for headers */
@@ -581,7 +581,7 @@ send_one_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver)
 			leds_on(LEDS_GREEN);
 			ret = MAC_TX_COLLISION;
 			printf("sent Collision before sending\n");
-			return 3;
+			//return 3;
 		}
 		else {
 			switch(NETSTACK_RADIO.transmit(packetbuf_totlen())) {
@@ -679,7 +679,8 @@ send_one_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver)
 									printf("emmac tx noack\n");
 								}*/
 							}
-							break;
+							if (ret==MAC_TX_OK){
+							break;}
 						}
 					}
 				//}
@@ -687,8 +688,8 @@ send_one_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver)
 			case RADIO_TX_COLLISION:
 				printf("sent Collision after TX\n");
 				ret = MAC_TX_COLLISION;
-				return 3;
-				//break;
+				//return 3;
+				break;
 			default:
 
 				ret = MAC_TX_ERR;
@@ -725,6 +726,7 @@ send_one_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver)
 	transmitting = 0;
 	leds_off(7);
 	leds_blink();
+	NETSTACK_RADIO.read(dummy_buf_to_flush_rxfifo,1);
 	return last_sent_ok;
 }
 /*---------------------------------------------------------------------------*/
@@ -773,11 +775,11 @@ send_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver)
 	//printf("n_ch: %d\n", neighbor_channel);
 	NETSTACK_RADIO.set_value(RADIO_PARAM_CHANNEL, neighbor_channel);
 	int result=3;
-	int sent_times=0;
+	/*int sent_times=0;
 	while (result==3){
-		printf("sent %d times\n", ++sent_times);
+		printf("sent %d times\n", ++sent_times);*/
 		result=send_one_packet(sent, ptr, receiver);
-	}
+	//}
 	return result;
 }
 /*---------------------------------------------------------------------------*/
@@ -864,7 +866,7 @@ packet_input(void)
 			if(!duplicate) {
 				frame802154_t recieved_frame;
 				frame_emmac_parse(original_dataptr, original_datalen, &recieved_frame);
-				printf("sent for me? %d\n", recieved_frame.fcf.ack_required != 0);
+				//printf("sent for me? %d\n", recieved_frame.fcf.ack_required != 0);
 				if(recieved_frame.fcf.frame_type == FRAME802154_DATAFRAME &&
 						/*recieved_frame.fcf.ack_required != 0 &&*/
 						(linkaddr_cmp((linkaddr_t *)&recieved_frame.dest_addr,
@@ -912,7 +914,7 @@ packet_input(void)
 			}
 		}
 	}
-	NETSTACK_RADIO.read(dummy_buf_to_flush_rxfifo,1);
+	//NETSTACK_RADIO.read(dummy_buf_to_flush_rxfifo,1);
 	leds_off(LEDS_BLUE);
 }
 
