@@ -76,13 +76,15 @@ static unsigned short ack_len;
 static unsigned short neighbor_discovery_flag;
 static unsigned int w_up_time;
 static unsigned time_in_seconds;
-static unsigned int sequence_number=0;
 uint8_t dummy_buf_to_flush_rxfifo[1];
 uint8_t current_channel=0;
 uint8_t w_up_ch = 26;
 int transmitting=0;
 int waiting_to_transmit=0;
 unsigned int list_of_channels[16]={0};
+static rtimer_clock_t wt4powercycle;
+unsigned int time_to_wait_awake;
+static int unicast_incoming=0;
 static unsigned int succ_beacon=0;
 static unsigned int successful=0;
 static unsigned int failed=0;
@@ -92,6 +94,7 @@ static unsigned int failed_COL=0;
 static unsigned int fail_ACK=0;
 static unsigned int failed_DEF=0;
 static unsigned int failed_ERR=0;
+
 #define MEMB_SIZE 4
 MEMB(neighbor_memb, neighbor_state, MEMB_SIZE);
 LIST(Neighbors);
@@ -102,7 +105,7 @@ static int 	check_if_radio_on	(void);
 static void	neighbor_discovery	(void);
 static char	reception_powercycle(void);
 static int 	send_one_packet		(mac_callback_t sent, void *ptr, linkaddr_t receiver);
-static int 	send_packet			(mac_callback_t sent, void *ptr, linkaddr_t receiver);
+static int 	send_packet			(mac_callback_t sent, void *ptr, linkaddr_t receiver, struct rdc_buf_list *buf_list);
 static void	send_list			(mac_callback_t sent, void *ptr, struct rdc_buf_list *buf_list);
 static void	packet_input		(void);
 static unsigned short channel_check_interval(void);
@@ -323,7 +326,6 @@ static void neighbor_discovery(void)
 /*La siguiente funcion se usa para controlar el ciclo util de radio*/
 static char reception_powercycle(void)
 {
-	rtimer_clock_t wt;
 	PT_BEGIN(&pt);
 	while (1){
 		if(!neighbor_discovery_flag && (transmitting == waiting_to_transmit)){  // TODO If the radio is not sending a packet, the radio should stay ON
@@ -381,30 +383,44 @@ static char reception_powercycle(void)
 			while(NETSTACK_RADIO.channel_clear() == 0){}
 			NETSTACK_RADIO.send(beacon_data, 12);
 		}
-		rtimer_set(&reciever_powercycle_timer,RTIMER_NOW()+ 330, 0,(void (*)(struct rtimer *, void *))reception_powercycle,NULL);
+		rtimer_set(&reciever_powercycle_timer,RTIMER_NOW() + 400, 0,(void (*)(struct rtimer *, void *))reception_powercycle,NULL);
 		if (transmitting==0){
 			/* The time spent awake is the maximum time required for a node to send a data packet from the moment it receives the beacon */
-			wt = RTIMER_NOW();
-			int time_to_wait_awake=300;
-			while(RTIMER_NOW() < (wt + time_to_wait_awake) && !neighbor_discovery_flag){
+			wt4powercycle = RTIMER_NOW();
+			time_to_wait_awake=400;
+			while(RTIMER_NOW() < (wt4powercycle + time_to_wait_awake) && !neighbor_discovery_flag /*&& unicast_incoming==0*/){
 				// Check if a packet was received
-				/*while(NETSTACK_RADIO.receiving_packet() ||
-						NETSTACK_RADIO.channel_clear() == 0){}*/
 				if (NETSTACK_RADIO.pending_packet()){
 					//printf("%u\n", RTIMER_NOW());
-					//rtimer_set(&reciever_powercycle_timer,RTIMER_NOW()+ 100, 0,(void (*)(struct rtimer *, void *))reception_powercycle,NULL);
+					//unicast_incoming=0;
+					/*if (!packetbuf_holds_broadcast()){
+						unicast_incoming=1;
+					}*/
+					rtimer_set(&reciever_powercycle_timer,RTIMER_NOW()+ 180, 0,(void (*)(struct rtimer *, void *))reception_powercycle,NULL);
+					//printf("t1:%d", time_to_wait_awake);
+					time_to_wait_awake+=100;
+					//printf(" t2:%d %u %u\n", time_to_wait_awake, wt4powercycle+time_to_wait_awake, RTIMER_NOW());
 					PT_YIELD(&pt);
+					leds_blink();
+					/*if (unicast_incoming==1){
+						break;
+					}*/
+					//printf(" %d, %u+%d %u\n", (wt4powercycle + time_to_wait_awake)>RTIMER_NOW(), wt4powercycle, time_to_wait_awake, RTIMER_NOW());
+					//unsigned int wt2=RTIMER_NOW();
+					//while (unicast_incoming==1 && RTIMER_NOW()<wt4powercycle+50){}
 					//printf("%u\n", RTIMER_NOW());
 				}
 			}
 			//printf("*\n", RTIMER_NOW());
 		}else {
 			printf("Tx & PwCy wake-up.\n");
-			leds_blink();
+			//leds_blink();
 			if (waiting_to_transmit==1){
 				off(0);
 			}
 		}
+		unicast_incoming=0;
+		//printf("ex\n");
 		current_channel=(current_channel+1)%16;
 		rtimer_set(&reciever_powercycle_timer,RTIMER_NOW()+ 10, 0,(void (*)(struct rtimer *, void *))reception_powercycle,NULL);
 
@@ -416,27 +432,6 @@ static char reception_powercycle(void)
 					(succ_beacon*100)/(succ_beacon+beacon_failed_sync), (succ_beacon*100)/(succ_beacon+beacon_failed_sync+beacon_failed_tx), (successful*100)/(successful+failed),
 					successful, failed, failed_COL, fail_ACK, failed_DEF, failed_ERR);
 		}
-		/* After a beacon is sent, wait for DATA_PACKET_WAITING_TIME period */
-		/************* Making node 2 follow the powercycle schedule of node 1 using the time prediction mechanism  ********************/
-		/*if (linkaddr_node_addr.u8[7]==2){
-			neighbor_state *test=list_head(Neighbors);
-			if (test->wake_time_seconds!=NULL){
-				get_neighbor_wake_up_time(get_neighbor_state(Neighbors, test->node_link_addr));}}*/
-		/***********************************/
-		/*wt = RTIMER_NOW();
-		while(RTIMER_CLOCK_LT(RTIMER_NOW(), wt + 1000)) {
-			// Check if a packet was received
-			while(NETSTACK_RADIO.receiving_packet() ||
-					NETSTACK_RADIO.channel_clear() == 0){}
-			if (NETSTACK_RADIO.pending_packet()){
-				break;
-			}
-		}*/
-		/* TODO: What happens if a packet was actually received? */
-		/* TODO The ACK works as a beacon, so sending an ACK should reset the waiting time of the node for a data packet. */
-		//printf("Timer spent awake: %u\n", RTIMER_NOW()-w_up_time);
-		/******************************************************************************************************************************/
-		//}
 		PT_YIELD(&pt);
 	}
 	PT_END(&pt);
@@ -486,7 +481,11 @@ send_one_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver)
 		if(NETSTACK_RADIO.pending_packet()) {
 			int len=NETSTACK_RADIO.read(beaconbuf, 14);
 			//printf("Length of the message: %d\n", len);
-			if (beaconbuf[0]==FRAME802154_BEACONFRAME){
+			if (beaconbuf[0]==FRAME802154_BEACONFRAME || beaconbuf[0]==FRAME802154_ACKFRAME){
+				if (beaconbuf[0]==FRAME802154_ACKFRAME){
+					beacon_received=1;
+					break;
+				}
 				linkaddr_t beacon_src_addr;
 				beacon_src_addr.u8[0] = beaconbuf[4];
 				beacon_src_addr.u8[1] = beaconbuf[5];
@@ -580,8 +579,8 @@ send_one_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver)
          sending with auto ack. */
 			leds_on(LEDS_GREEN);
 			ret = MAC_TX_COLLISION;
-			printf("sent Collision before sending\n");
-			//return 3;
+			printf("sent Col sding\n");
+			return 3;
 		}
 		else {
 			switch(NETSTACK_RADIO.transmit(packetbuf_totlen())) {
@@ -686,10 +685,10 @@ send_one_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver)
 				//}
 				break;
 			case RADIO_TX_COLLISION:
-				printf("sent Collision after TX\n");
+				printf("sent Col TX\n");
 				ret = MAC_TX_COLLISION;
-				//return 3;
-				break;
+				return 3;
+				//break;
 			default:
 
 				ret = MAC_TX_ERR;
@@ -726,12 +725,12 @@ send_one_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver)
 	transmitting = 0;
 	leds_off(7);
 	leds_blink();
-	NETSTACK_RADIO.read(dummy_buf_to_flush_rxfifo,1);
+	//NETSTACK_RADIO.read(dummy_buf_to_flush_rxfifo,1);
 	return last_sent_ok;
 }
 /*---------------------------------------------------------------------------*/
 static int
-send_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver)
+send_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver, struct rdc_buf_list *buf_list)
 {
 	uint8_t neighbor_channel;
 	uint8_t done=0;
@@ -775,17 +774,26 @@ send_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver)
 	//printf("n_ch: %d\n", neighbor_channel);
 	NETSTACK_RADIO.set_value(RADIO_PARAM_CHANNEL, neighbor_channel);
 	int result=3;
-	/*int sent_times=0;
+	int sent_times=0;
 	while (result==3){
-		printf("sent %d times\n", ++sent_times);*/
+		printf("sent %d\n", ++sent_times);
+		queuebuf_to_packetbuf(buf_list->buf); // If this line is not present, the las node in the neighbor list receives a packet with part of the header repeated. Don't know why!
 		result=send_one_packet(sent, ptr, receiver);
-	//}
+		NETSTACK_RADIO.read(dummy_buf_to_flush_rxfifo,1);	// This is done to remove any packet remaining in the Reception FIFO
+	}
 	return result;
 }
 /*---------------------------------------------------------------------------*/
 static void
 send_list(mac_callback_t sent, void *ptr, struct rdc_buf_list *buf_list)
 {
+	/*static struct timer wait_to_recv_timer;
+	if (NETSTACK_RADIO.pending_packet()){
+		printf("pp in sendlist\n");
+		timer_set(&wait_to_recv_timer, CLOCK_SECOND/100);
+		while (!timer_expired(&wait_to_recv_timer)){}
+	}*/
+
 	while(buf_list != NULL) {
 		transmitting = 1;
 		waiting_to_transmit = 1;
@@ -798,7 +806,7 @@ send_list(mac_callback_t sent, void *ptr, struct rdc_buf_list *buf_list)
 		linkaddr_copy(&addr_receiver,packetbuf_addr(PACKETBUF_ADDR_RECEIVER));
 		if (!packetbuf_holds_broadcast()){
 			printf("UNICAST to: %d\n", addr_receiver.u8[7]);
-			last_sent_ok = send_packet(sent, ptr, addr_receiver);
+			last_sent_ok = send_packet(sent, ptr, addr_receiver, buf_list);
 		}else {
 			printf("BROADCAST\n");
 			neighbor_state *neighbor_broadcast_to_unicast=list_head(Neighbors);
@@ -807,7 +815,7 @@ send_list(mac_callback_t sent, void *ptr, struct rdc_buf_list *buf_list)
 				waiting_to_transmit = 1;
 				queuebuf_to_packetbuf(buf_list->buf); // If this line is not present, the las node in the neighbor list receives a packet with part of the header repeated. Don't know why!
 				//packetbuf_set_addr(PACKETBUF_ADDR_RECEIVER, &(neighbor_broadcast_to_unicast->node_link_addr));
-				last_sent_ok = send_packet(sent, ptr, neighbor_broadcast_to_unicast->node_link_addr);
+				last_sent_ok = send_packet(sent, ptr, neighbor_broadcast_to_unicast->node_link_addr, buf_list);
 				printf("Broadcast sent to: %d \n", neighbor_broadcast_to_unicast->node_link_addr.u8[7]);
 				neighbor_broadcast_to_unicast = list_item_next(neighbor_broadcast_to_unicast);
 			}
@@ -827,7 +835,7 @@ send_list(mac_callback_t sent, void *ptr, struct rdc_buf_list *buf_list)
 static void
 packet_input(void)
 {
-	leds_on(LEDS_BLUE);
+	leds_on(2);
 	//printf("DENTRO DE PACKET_INPUT\n");
 	unsigned int wake_up_time;
 	int original_datalen;
@@ -909,13 +917,12 @@ packet_input(void)
 					}
 
 				}
-				/*TODO The ACK works as a beacon, so sending an ACK should reset the waiting time of the node for a data packet. */
 				NETSTACK_MAC.input();
 			}
 		}
 	}
 	//NETSTACK_RADIO.read(dummy_buf_to_flush_rxfifo,1);
-	leds_off(LEDS_BLUE);
+	leds_off(2);
 }
 
 /*---------------------------------------------------------------------------*/

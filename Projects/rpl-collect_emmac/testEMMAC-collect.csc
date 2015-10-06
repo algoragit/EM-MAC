@@ -117,10 +117,10 @@
   </simulation>
   <plugin>
     org.contikios.cooja.plugins.SimControl
-    <width>280</width>
-    <z>1</z>
+    <width>282</width>
+    <z>2</z>
     <height>160</height>
-    <location_x>318</location_x>
+    <location_x>316</location_x>
     <location_y>2</location_y>
   </plugin>
   <plugin>
@@ -143,15 +143,15 @@
   <plugin>
     org.contikios.cooja.plugins.LogListener
     <plugin_config>
-      <filter />
+      <filter>:1</filter>
       <formatted_time />
       <coloring />
     </plugin_config>
     <width>941</width>
-    <z>2</z>
+    <z>3</z>
     <height>523</height>
-    <location_x>2</location_x>
-    <location_y>471</location_y>
+    <location_x>10</location_x>
+    <location_y>481</location_y>
   </plugin>
   <plugin>
     org.contikios.cooja.plugins.TimeLine
@@ -165,28 +165,28 @@
       <showLEDs />
       <showLogOutput />
       <executionDetails />
-      <zoomfactor>200.0</zoomfactor>
+      <zoomfactor>100.0</zoomfactor>
     </plugin_config>
     <width>1873</width>
     <z>0</z>
-    <height>309</height>
+    <height>185</height>
     <location_x>6</location_x>
     <location_y>162</location_y>
   </plugin>
   <plugin>
     org.contikios.cooja.plugins.RadioLogger
     <plugin_config>
-      <split>325</split>
+      <split>571</split>
       <formatted_time />
       <showdups>false</showdups>
       <hidenodests>false</hidenodests>
       <analyzers name="6lowpan" />
     </plugin_config>
     <width>914</width>
-    <z>3</z>
-    <height>561</height>
+    <z>1</z>
+    <height>693</height>
     <location_x>950</location_x>
-    <location_y>482</location_y>
+    <location_y>350</location_y>
   </plugin>
   <plugin>
     org.contikios.cooja.plugins.LogListener
