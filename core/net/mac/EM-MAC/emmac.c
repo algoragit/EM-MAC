@@ -398,7 +398,7 @@ static char reception_powercycle(void)
 					}*/
 					rtimer_set(&reciever_powercycle_timer,RTIMER_NOW()+ 180, 0,(void (*)(struct rtimer *, void *))reception_powercycle,NULL);
 					//printf("t1:%d", time_to_wait_awake);
-					time_to_wait_awake+=100;
+					time_to_wait_awake+=50;
 					//printf(" t2:%d %u %u\n", time_to_wait_awake, wt4powercycle+time_to_wait_awake, RTIMER_NOW());
 					PT_YIELD(&pt);
 					leds_blink();
@@ -424,14 +424,14 @@ static char reception_powercycle(void)
 		current_channel=(current_channel+1)%16;
 		rtimer_set(&reciever_powercycle_timer,RTIMER_NOW()+ 10, 0,(void (*)(struct rtimer *, void *))reception_powercycle,NULL);
 
-		if (clock_seconds()%150 < 2){
+		/*if (clock_seconds()%150 < 2){
 			printf("succ_b:%u b_fail:%u b_fail_s:%u b_fail_tx:%u\n"
 					"succ_B_PDR=%u  validB_PDR=%u  PDR=%u\n"
 					"succ_:%u fail:%u f_COL:%u f_ACK:%u f_DEF:%u f_ERR:%u\n",
 					succ_beacon, beacon_failed_sync+beacon_failed_tx, beacon_failed_sync, beacon_failed_tx,
 					(succ_beacon*100)/(succ_beacon+beacon_failed_sync), (succ_beacon*100)/(succ_beacon+beacon_failed_sync+beacon_failed_tx), (successful*100)/(successful+failed),
 					successful, failed, failed_COL, fail_ACK, failed_DEF, failed_ERR);
-		}
+		}*/
 		PT_YIELD(&pt);
 	}
 	PT_END(&pt);
@@ -551,12 +551,12 @@ send_one_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver)
 	packetbuf_set_attr(PACKETBUF_ATTR_MAC_ACK,1);
 
 	//if((!exist /*&& !is_broadcast*/) || (n_state.m==NULL /*&& !is_broadcast*/)){/*Si el vecino no existe y el paquete no es de broadcast o no se ha completado el estado del vecinoy el paquete no es de broadcast */
-		packetbuf_set_attr( PACKETBUF_ATTR_NODE_STATE_FLAG, 1);
-		//printf("ACK_STATE_RQ\n");
+	packetbuf_set_attr( PACKETBUF_ATTR_NODE_STATE_FLAG, 1);
+	//printf("ACK_STATE_RQ\n");
 	/*}
 	ack_len=3;
 	if( packetbuf_attr(PACKETBUF_ATTR_NODE_STATE_FLAG)){*/
-		ack_len=14;
+	ack_len=14;
 	//}
 
 	if(NETSTACK_FRAMER.create() < 0) {/*Se llama al framer para crea la trama*/
@@ -589,70 +589,43 @@ send_one_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver)
 					// BROADCAST packets doesn't require ACK, so we automatically return with successful transmission result
 					ret = MAC_TX_OK;
 				} else {*/
-					// Check for ACK
-					wt = RTIMER_NOW();
-					ret = MAC_TX_NOACK;
-					// Flush the RXFIFO to avoid that a node interprets as yours an ACK sent to another node with the same packet sequence number.
-					NETSTACK_RADIO.read(dummy_buf_to_flush_rxfifo,1);
-					// Wait for the ACK
-					while(RTIMER_CLOCK_LT(RTIMER_NOW(), wt + ACK_WAIT_TIME)) {
-						/*Este mecanismo es similar al explicado en neighbor discovery*/
-						if(NETSTACK_RADIO.receiving_packet() ||				//Ninguna de estas condiciones se cumple cuando se envía un paquete de datos.
-								NETSTACK_RADIO.pending_packet() ||
-								NETSTACK_RADIO.channel_clear() == 0) {
-							int len;
-							uint8_t ackbuf[ack_len];
-							wt = RTIMER_NOW();
-							while(RTIMER_CLOCK_LT(RTIMER_NOW(), wt + AFTER_ACK_DETECTED_WAIT_TIME)) {
-								if(NETSTACK_RADIO.pending_packet()) {
-									//printf("PP\n");
-									len = NETSTACK_RADIO.read(ackbuf, ack_len);
-									unsigned int local_time_tics = RTIMER_NOW();
-									unsigned int local_time_seconds = clock_seconds();
-									linkaddr_t ack_addr_receiver;
-									linkaddr_copy(&ack_addr_receiver,packetbuf_addr(PACKETBUF_ADDR_RECEIVER));
+				// Check for ACK
+				wt = RTIMER_NOW();
+				ret = MAC_TX_NOACK;
+				// Flush the RXFIFO to avoid that a node interprets as yours an ACK sent to another node with the same packet sequence number.
+				NETSTACK_RADIO.read(dummy_buf_to_flush_rxfifo,1);
+				// Wait for the ACK
+				while(RTIMER_CLOCK_LT(RTIMER_NOW(), wt + ACK_WAIT_TIME)) {
+					/*Este mecanismo es similar al explicado en neighbor discovery*/
+					if(NETSTACK_RADIO.receiving_packet() ||				//Ninguna de estas condiciones se cumple cuando se envía un paquete de datos.
+							NETSTACK_RADIO.pending_packet() ||
+							NETSTACK_RADIO.channel_clear() == 0) {
+						int len;
+						uint8_t ackbuf[ack_len];
+						wt = RTIMER_NOW();
+						while(RTIMER_CLOCK_LT(RTIMER_NOW(), wt + AFTER_ACK_DETECTED_WAIT_TIME)) {
+							if(NETSTACK_RADIO.pending_packet()) {
+								//printf("PP\n");
+								len = NETSTACK_RADIO.read(ackbuf, ack_len);
+								unsigned int local_time_tics = RTIMER_NOW();
+								unsigned int local_time_seconds = clock_seconds();
+								//linkaddr_t ack_addr_receiver;
+								//linkaddr_copy(&ack_addr_receiver,packetbuf_addr(PACKETBUF_ADDR_RECEIVER));
 
-									if(len == ack_len && ackbuf[2] == dsn) {
-										/* Ack received */
-										if( packetbuf_attr(PACKETBUF_ATTR_NODE_STATE_FLAG)){
-											/*Si el ACK lleva informacion de estado, esta se lee y se almacen en variables temporales*/
-											w_time= ackbuf[3]+ (ackbuf[4] << 8); // Tiempo de wake-up en tics
-											t_sec=ackbuf[5]+ (ackbuf[6] << 8);  // Tiempo de wake-up en seg
-											unsigned int last_generated=ackbuf[7]+ (ackbuf[8] << 8);  // Última semilla del generador
-											unsigned int c_t_sec = ackbuf[9]+ (ackbuf[10] << 8); //tiempo actual en seconds
-											uint8_t last_ch = ackbuf[11];			// last visited channel
-											t_tic=ackbuf[12]+ (ackbuf[13] << 8); //tiempo actual en tics
-											/*Sobreescribimos o escribimos la informacion de estado correspondiente al vecino en cuestion*/
-											//printf("list of Neighbors: ");
-											for(n = list_head(Neighbors); n != NULL; n = list_item_next(n)) {
-												if(linkaddr_cmp(&ack_addr_receiver, &n->node_link_addr)) {
-													n->wake_time_tics=w_time;
-													n->wake_time_seconds=t_sec;
-													n->last_seed=last_generated;
-													n->last_channel=last_ch;
-													if(n->n==NULL){
-														n->n=(long int)((long int)(local_time_tics)-(long int)(t_tic));}
-													else{
-														n->m=(int)((long int)(local_time_seconds)-(long int)(c_t_sec));}
-													/* If the values in ticks exchanged by the nodes are not distant from each other
-													but they are at both sides of a second frontier (e.g. 32768 and 0 for the Zolertia Z1),
-													then we should not take into account that last second because it would introduce errors
-													in the time prediction mechanism. The same applies for a new neighbor. */
-													if (abs(n->n) < RTIMER_SECOND/2 && n->m != 0){
-														n->m = (abs(n->m)-1) * (n->m/(abs(n->m)));
-													}
-													break;
-												}
-											}
-											/* No matching encounter was found, so we allocate a new one. */
-											if(n == NULL) {
-												n = memb_alloc(&neighbor_memb);
-												if(n == NULL) {
-													/* We could not allocate memory for this encounter, so we just drop it. */
-													break;
-												}
-												linkaddr_copy(&n->node_link_addr, &ack_addr_receiver);
-
+								if(len == ack_len && ackbuf[2] == dsn) {
+									/* Ack received */
+									if( packetbuf_attr(PACKETBUF_ATTR_NODE_STATE_FLAG)){
+										/*Si el ACK lleva informacion de estado, esta se lee y se almacen en variables temporales*/
+										w_time= ackbuf[3]+ (ackbuf[4] << 8); // Tiempo de wake-up en tics
+										t_sec=ackbuf[5]+ (ackbuf[6] << 8);  // Tiempo de wake-up en seg
+										unsigned int last_generated=ackbuf[7]+ (ackbuf[8] << 8);  // Última semilla del generador
+										unsigned int c_t_sec = ackbuf[9]+ (ackbuf[10] << 8); //tiempo actual en seconds
+										uint8_t last_ch = ackbuf[11];			// last visited channel
+										t_tic=ackbuf[12]+ (ackbuf[13] << 8); //tiempo actual en tics
+										/*Sobreescribimos o escribimos la informacion de estado correspondiente al vecino en cuestion*/
+										//printf("list of Neighbors: ");
+										for(n = list_head(Neighbors); n != NULL; n = list_item_next(n)) {
+											if(linkaddr_cmp(&receiver, &n->node_link_addr)) {
 												n->wake_time_tics=w_time;
 												n->wake_time_seconds=t_sec;
 												n->last_seed=last_generated;
@@ -661,27 +634,56 @@ send_one_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver)
 													n->n=(long int)((long int)(local_time_tics)-(long int)(t_tic));}
 												else{
 													n->m=(int)((long int)(local_time_seconds)-(long int)(c_t_sec));}
+												/* If the values in ticks exchanged by the nodes are not distant from each other
+													but they are at both sides of a second frontier (e.g. 32768 and 0 for the Zolertia Z1),
+													then we should not take into account that last second because it would introduce errors
+													in the time prediction mechanism. The same applies for a new neighbor. */
 												if (abs(n->n) < RTIMER_SECOND/2 && n->m != 0){
 													n->m = (abs(n->m)-1) * (n->m/(abs(n->m)));
 												}
-												list_add(Neighbors, n);
+												break;
 											}
 										}
-										ret = MAC_TX_OK;
-										break;		// This breaks the While after an ACK has been received and processed.
-									} else {
-										/* Not an ACK or ACK not for us: collision */
-										ret = MAC_TX_COLLISION;
+										/* No matching encounter was found, so we allocate a new one. */
+										if(n == NULL) {
+											printf("Neigh not found. ");
+											n = memb_alloc(&neighbor_memb);
+											if(n == NULL) {
+												/* We could not allocate memory for this encounter, so we just drop it. */
+												break;
+											}
+											printf("Neigh added %d\n");
+											linkaddr_copy(&n->node_link_addr, &receiver);
+
+											n->wake_time_tics=w_time;
+											n->wake_time_seconds=t_sec;
+											n->last_seed=last_generated;
+											n->last_channel=last_ch;
+											if(n->n==NULL){
+												n->n=(long int)((long int)(local_time_tics)-(long int)(t_tic));}
+											else{
+												n->m=(int)((long int)(local_time_seconds)-(long int)(c_t_sec));}
+											if (abs(n->n) < RTIMER_SECOND/2 && n->m != 0){
+												n->m = (abs(n->m)-1) * (n->m/(abs(n->m)));
+											}
+											list_add(Neighbors, n);
+										}
 									}
+									ret = MAC_TX_OK;
+									break;		// This breaks the While after an ACK has been received and processed.
+								} else {
+									/* Not an ACK or ACK not for us: collision */
+									ret = MAC_TX_COLLISION;
 								}
-								/*else {
+							}
+							/*else {
 									printf("emmac tx noack\n");
 								}*/
-							}
-							if (ret==MAC_TX_OK){
-							break;}
 						}
+						if (ret==MAC_TX_OK){
+							break;}
 					}
+				}
 				//}
 				break;
 			case RADIO_TX_COLLISION:
@@ -801,11 +803,17 @@ send_list(mac_callback_t sent, void *ptr, struct rdc_buf_list *buf_list)
 		 * mac_call_sent_callback() */
 		struct rdc_buf_list *next = buf_list->next;
 		int last_sent_ok;
-		queuebuf_to_packetbuf(buf_list->buf);
 		static  linkaddr_t addr_receiver;
 		linkaddr_copy(&addr_receiver,packetbuf_addr(PACKETBUF_ADDR_RECEIVER));
 		if (!packetbuf_holds_broadcast()){
-			printf("UNICAST to: %d\n", addr_receiver.u8[7]);
+			printf("UNICAST to: %d ", addr_receiver.u8[7]);
+			if (addr_receiver.u8[7]==linkaddr_node_addr.u8[7]){
+				int i=0;
+				for (i=0;i<8;i++){
+					printf("%02x ", addr_receiver.u8[i]);
+				}
+			}
+			printf("\n");
 			last_sent_ok = send_packet(sent, ptr, addr_receiver, buf_list);
 		}else {
 			printf("BROADCAST\n");
@@ -813,11 +821,20 @@ send_list(mac_callback_t sent, void *ptr, struct rdc_buf_list *buf_list)
 			while(neighbor_broadcast_to_unicast != NULL && last_sent_ok) {
 				transmitting = 1;
 				waiting_to_transmit = 1;
-				queuebuf_to_packetbuf(buf_list->buf); // If this line is not present, the las node in the neighbor list receives a packet with part of the header repeated. Don't know why!
 				//packetbuf_set_addr(PACKETBUF_ADDR_RECEIVER, &(neighbor_broadcast_to_unicast->node_link_addr));
 				last_sent_ok = send_packet(sent, ptr, neighbor_broadcast_to_unicast->node_link_addr, buf_list);
-				printf("Broadcast sent to: %d \n", neighbor_broadcast_to_unicast->node_link_addr.u8[7]);
+				printf("BCast to:%d\n", neighbor_broadcast_to_unicast->node_link_addr.u8[7]);
 				neighbor_broadcast_to_unicast = list_item_next(neighbor_broadcast_to_unicast);
+				/*if (neighbor_broadcast_to_unicast->node_link_addr.u8[7]==0){
+					printf("Next: ");
+					int i=0;
+					for (i=0;i<8;i++){
+						printf("%02x ", neighbor_broadcast_to_unicast->node_link_addr.u8[i]);
+					}
+					printf("%u %d %u %d %u %lu ", neighbor_broadcast_to_unicast->wake_time_tics, neighbor_broadcast_to_unicast->m,
+							neighbor_broadcast_to_unicast->last_seed, neighbor_broadcast_to_unicast->last_channel, neighbor_broadcast_to_unicast->wake_time_seconds,
+							neighbor_broadcast_to_unicast->n);
+				}*/
 			}
 		}
 		/* If packet transmission was not successful, we should back off and let
