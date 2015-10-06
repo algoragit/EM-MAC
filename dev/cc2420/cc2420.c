@@ -888,6 +888,7 @@ PROCESS_THREAD(cc2420_process, ev, data)
 static int
 cc2420_read(void *buf, unsigned short bufsize)
 {
+	//printf("r\n");
   uint8_t footer[FOOTER_LEN];
   uint8_t len;
 
