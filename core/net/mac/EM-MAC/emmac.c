@@ -390,11 +390,10 @@ static char reception_powercycle(void)
 			/* The time spent awake is the maximum time required for a node to send a data packet from the moment it receives the beacon */
 			wt4powercycle = RTIMER_NOW();
 			time_to_wait_awake=400;
-			while(RTIMER_NOW() < (wt4powercycle + time_to_wait_awake) && !neighbor_discovery_flag /*&& unicast_incoming==0*/){
+			while(RTIMER_NOW() < (wt4powercycle + time_to_wait_awake) && !neighbor_discovery_flag && transmitting==0){
 				// Check if a packet was received
 				//printf("%d%d\n", NETSTACK_RADIO.pending_packet(), NETSTACK_RADIO.receiving_packet());
 				if (NETSTACK_RADIO.pending_packet()){
-					//printf("%u\n", RTIMER_NOW());
 					//unicast_incoming=0;
 					/*if (!packetbuf_holds_broadcast()){
 						unicast_incoming=1;
@@ -405,10 +404,12 @@ static char reception_powercycle(void)
 					time_to_wait_awake+=50;
 					//printf(" t2:%d %u %u\n", time_to_wait_awake, wt4powercycle+time_to_wait_awake, RTIMER_NOW());
 					PT_YIELD(&pt);
+					printf("datal:%u %d\n", packetbuf_datalen(), NETSTACK_RADIO.pending_packet());
 					leds_blink();
 					/*if (unicast_incoming==1){
 						break;
 					}*/
+
 					//printf(" %d, %u+%d %u\n", (wt4powercycle + time_to_wait_awake)>RTIMER_NOW(), wt4powercycle, time_to_wait_awake, RTIMER_NOW());
 					//unsigned int wt2=RTIMER_NOW();
 					//while (unicast_incoming==1 && RTIMER_NOW()<wt4powercycle+50){}
@@ -855,7 +856,7 @@ packet_input(void)
 	unsigned int wake_up_time;
 	int original_datalen;
 	uint8_t *original_dataptr;
-	/*original_datalen y original_dataptr se utlizan para la conformacion del ACK*/
+	/*original_datalen y original_dataptr are necessary for making the ACK*/
 	original_datalen = packetbuf_datalen();
 	original_dataptr = packetbuf_dataptr();
 
@@ -937,6 +938,7 @@ packet_input(void)
 		}
 	}
 	//NETSTACK_RADIO.read(dummy_buf_to_flush_rxfifo,1);
+	rtimer_set(&reciever_powercycle_timer,RTIMER_NOW()+ 5, 0,(void (*)(struct rtimer *, void *))reception_powercycle,NULL);
 	leds_off(2);
 }
 
