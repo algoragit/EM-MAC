@@ -428,14 +428,14 @@ static char reception_powercycle(void)
 		//printf("ex\n");
 		current_channel=(current_channel+1)%16;
 
-		/*if (clock_seconds()%150 < 2){
+		if (clock_seconds()%150 < 2){
 			printf("succ_b:%u b_fail:%u b_fail_s:%u b_fail_tx:%u\n"
 					"succ_B_PDR=%u  validB_PDR=%u  PDR=%u\n"
 					"succ_:%u fail:%u f_COL:%u f_ACK:%u f_DEF:%u f_ERR:%u\n",
 					succ_beacon, beacon_failed_sync+beacon_failed_tx, beacon_failed_sync, beacon_failed_tx,
 					(succ_beacon*100)/(succ_beacon+beacon_failed_sync), (succ_beacon*100)/(succ_beacon+beacon_failed_sync+beacon_failed_tx), (successful*100)/(successful+failed),
 					successful, failed, failed_COL, fail_ACK, failed_DEF, failed_ERR);
-		}*/
+		}
 		rtimer_set(&reciever_powercycle_timer,RTIMER_NOW()+ 5, 0,(void (*)(struct rtimer *, void *))reception_powercycle,NULL);
 		PT_YIELD(&pt);
 	}
