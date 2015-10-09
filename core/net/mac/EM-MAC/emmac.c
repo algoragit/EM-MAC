@@ -61,7 +61,7 @@
 #define PRINTF(...)
 #endif
 
-#define ACK_WAIT_TIME                      RTIMER_SECOND / 150/*Podria ser hasta RTIMER/900, para valores mayores que 900 el tx no recibe el ACK*/
+#define ACK_WAIT_TIME                      RTIMER_SECOND / 70/*Podria ser hasta RTIMER/900, para valores mayores que 900 el tx no recibe el ACK*/
 #define AFTER_ACK_DETECTED_WAIT_TIME       RTIMER_SECOND / 250
 #define DATA_PACKET_WAIT_TIME               RTIMER_SECOND / 500
 //Values of the reception state
@@ -84,7 +84,9 @@ int waiting_to_transmit=0;
 unsigned int list_of_channels[16]={0};
 static rtimer_clock_t wt4powercycle;
 unsigned int time_to_wait_awake;
+static int offset;
 static int sent_times=0;
+static int incoming_packet=0;
 //static int unicast_incoming=0;
 static unsigned int succ_beacon=0;
 static unsigned int successful=0;
@@ -105,7 +107,7 @@ static int 	off					(int keep_radio_on);
 static int 	check_if_radio_on	(void);
 static void	neighbor_discovery	(void);
 static char	reception_powercycle(void);
-static int 	send_one_packet		(mac_callback_t sent, void *ptr, linkaddr_t receiver);
+static int 	send_one_packet		(mac_callback_t sent, void *ptr, linkaddr_t receiver, int result);
 static int 	send_packet			(mac_callback_t sent, void *ptr, linkaddr_t receiver, struct rdc_buf_list *buf_list);
 static void	send_list			(mac_callback_t sent, void *ptr, struct rdc_buf_list *buf_list);
 static void	packet_input		(void);
@@ -389,11 +391,16 @@ static char reception_powercycle(void)
 		if (transmitting==0){
 			/* The time spent awake is the maximum time required for a node to send a data packet from the moment it receives the beacon */
 			wt4powercycle = RTIMER_NOW();
-			time_to_wait_awake=400;
-			while(RTIMER_NOW() < (wt4powercycle + time_to_wait_awake) && !neighbor_discovery_flag && transmitting==0){
+			time_to_wait_awake=300;
+			if ((wt4powercycle+time_to_wait_awake) <= 400){
+				offset=400;
+			}else {
+				offset=0;
+			}
+			while((RTIMER_NOW()+offset) < (wt4powercycle + time_to_wait_awake + offset) && !neighbor_discovery_flag && transmitting==0){
 				// Check if a packet was received
 				//printf("%d%d\n", NETSTACK_RADIO.pending_packet(), NETSTACK_RADIO.receiving_packet());
-				if (NETSTACK_RADIO.pending_packet()){
+				if (NETSTACK_RADIO.pending_packet() || incoming_packet==1 ){
 					//unicast_incoming=0;
 					/*if (!packetbuf_holds_broadcast()){
 						unicast_incoming=1;
@@ -401,15 +408,22 @@ static char reception_powercycle(void)
 					rtimer_set(&reciever_powercycle_timer,RTIMER_NOW()+ 150, 0,(void (*)(struct rtimer *, void *))reception_powercycle,NULL);
 					leds_blink();
 					//printf("t1:%d", time_to_wait_awake);
-					time_to_wait_awake+=50;
+					time_to_wait_awake=400 + ((RTIMER_NOW()-wt4powercycle));
 					//printf(" t2:%d %u %u\n", time_to_wait_awake, wt4powercycle+time_to_wait_awake, RTIMER_NOW());
 					PT_YIELD(&pt);
-					printf("datal:%u %d\n", packetbuf_datalen(), NETSTACK_RADIO.pending_packet());
+					printf("datal:%u %d %d %d %d\n",
+							packetbuf_datalen(), NETSTACK_RADIO.pending_packet(),
+							incoming_packet, transmitting, RTIMER_NOW() < (wt4powercycle + time_to_wait_awake));
 					leds_blink();
 					/*if (unicast_incoming==1){
 						break;
 					}*/
-
+					if ((wt4powercycle+time_to_wait_awake) <= 400){
+						printf("RES=2 off\n");
+						offset=400;
+					}else {
+						offset=0;
+					}
 					//printf(" %d, %u+%d %u\n", (wt4powercycle + time_to_wait_awake)>RTIMER_NOW(), wt4powercycle, time_to_wait_awake, RTIMER_NOW());
 					//unsigned int wt2=RTIMER_NOW();
 					//while (unicast_incoming==1 && RTIMER_NOW()<wt4powercycle+50){}
@@ -425,7 +439,7 @@ static char reception_powercycle(void)
 			}
 		}
 		//unicast_incoming=0;
-		//printf("ex\n");
+		printf("e%u\n", RTIMER_NOW());
 		current_channel=(current_channel+1)%16;
 
 		if (clock_seconds()%150 < 2){
@@ -443,7 +457,7 @@ static char reception_powercycle(void)
 }
 /*---------------------------------------------------------------------------*/
 static int
-send_one_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver)
+send_one_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver, int result)
 {
 	//printf("send_one_packet()\n");
 	neighbor_state *n;
@@ -479,7 +493,11 @@ send_one_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver)
 	uint8_t beaconbuf[14];
 	NETSTACK_RADIO.read(dummy_buf_to_flush_rxfifo,1);	// This is done to remove any packet remaining in the Reception FIFO
 	wt = RTIMER_NOW();
-	while(RTIMER_CLOCK_LT(RTIMER_NOW(), wt + 1310) && beacon_received==0) {  //It should be "wt + Time_from_Chasing_algorithm but for now we just use 40ms (remember in Cooja the time is twice the real time)
+	int wait_for_neighbor=1310;
+	if (result==3){
+		wait_for_neighbor=400;
+	}
+	while(RTIMER_CLOCK_LT(RTIMER_NOW(), wt + wait_for_neighbor) && beacon_received==0) {  //It should be "wt + Time_from_Chasing_algorithm but for now we just use 40ms (remember in Cooja the time is twice the real time)
 		/*if( !check_if_radio_on() && !neighbor_discovery_flag ){
 			on();
 		}*/
@@ -785,7 +803,7 @@ send_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver, struct rdc_buf_
 	do{
 		printf("sent %d\n", ++sent_times);
 		queuebuf_to_packetbuf(buf_list->buf); // If this line is not present, the las node in the neighbor list receives a packet with part of the header repeated. Don't know why!
-		result=send_one_packet(sent, ptr, receiver);
+		result=send_one_packet(sent, ptr, receiver, result);
 		NETSTACK_RADIO.read(dummy_buf_to_flush_rxfifo,1);	// This is done to remove any packet remaining in the Reception FIFO
 	} while (result==3);
 	return result;
@@ -852,6 +870,7 @@ static void
 packet_input(void)
 {
 	leds_on(2);
+	incoming_packet=1;
 	//printf("DENTRO DE PACKET_INPUT\n");
 	unsigned int wake_up_time;
 	int original_datalen;
@@ -938,8 +957,10 @@ packet_input(void)
 		}
 	}
 	//NETSTACK_RADIO.read(dummy_buf_to_flush_rxfifo,1);
+	incoming_packet=0;
 	rtimer_set(&reciever_powercycle_timer,RTIMER_NOW()+ 5, 0,(void (*)(struct rtimer *, void *))reception_powercycle,NULL);
 	leds_off(2);
+	//incoming_packet=0;
 }
 
 /*---------------------------------------------------------------------------*/
