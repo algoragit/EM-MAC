@@ -337,7 +337,10 @@ static char reception_powercycle(void)
 		}
 		initial_rand_seed_temp=(15213*initial_rand_seed)+11237;
 		//printf("Sleep:%u (SEED:%u)\n",initial_rand_seed_temp%RTIMER_SECOND + RTIMER_SECOND/2, initial_rand_seed_temp);//}
-
+		if (clock_seconds()>300){
+			clock_set_seconds((clock_seconds()/300)*300);
+			clock_init();
+		}
 		rtimer_set(&reciever_powercycle_timer,(w_up_time+(initial_rand_seed_temp%RTIMER_SECOND + RTIMER_SECOND/2)), 0,(void (*)(struct rtimer *, void *))reception_powercycle,NULL);
 		//printf("pc_off:%u\npc_              %u  %u\n", RTIMER_NOW(), initial_rand_seed_temp%RTIMER_SECOND + RTIMER_SECOND/2, w_up_time+(initial_rand_seed_temp%RTIMER_SECOND + RTIMER_SECOND/2));
 		if (transmitting!=0 /*|| neighbor_discovery_flag*/){
@@ -392,6 +395,9 @@ static char reception_powercycle(void)
 			/* The time spent awake is the maximum time required for a node to send a data packet from the moment it receives the beacon */
 			wt4powercycle = RTIMER_NOW();
 			time_to_wait_awake=300;
+			/* This IF prevents the node to go back to sleep if RTIMER_NOW() is greater than (2^16-400) because,
+			 * in that case, (RTIMER_NOW() > (wt4powercycle + time_to_wait_awake)); and the node goes to sleep earlier than it should.
+			 */
 			if ((wt4powercycle+time_to_wait_awake) <= 400){
 				offset=400;
 			}else {
@@ -406,20 +412,19 @@ static char reception_powercycle(void)
 						unicast_incoming=1;
 					}*/
 					rtimer_set(&reciever_powercycle_timer,RTIMER_NOW()+ 150, 0,(void (*)(struct rtimer *, void *))reception_powercycle,NULL);
-					leds_blink();
+					//leds_blink();
 					//printf("t1:%d", time_to_wait_awake);
 					time_to_wait_awake=400 + ((RTIMER_NOW()-wt4powercycle));
 					//printf(" t2:%d %u %u\n", time_to_wait_awake, wt4powercycle+time_to_wait_awake, RTIMER_NOW());
 					PT_YIELD(&pt);
-					printf("datal:%u %d %d %d %d\n",
+					/*printf("datal:%u %d %d %d %d\n",
 							packetbuf_datalen(), NETSTACK_RADIO.pending_packet(),
 							incoming_packet, transmitting, RTIMER_NOW() < (wt4powercycle + time_to_wait_awake));
-					leds_blink();
+					leds_blink();*/
 					/*if (unicast_incoming==1){
 						break;
 					}*/
 					if ((wt4powercycle+time_to_wait_awake) <= 400){
-						printf("RES=2 off\n");
 						offset=400;
 					}else {
 						offset=0;
@@ -439,16 +444,24 @@ static char reception_powercycle(void)
 			}
 		}
 		//unicast_incoming=0;
-		printf("e%u\n", RTIMER_NOW());
+		//printf("e%u\n", RTIMER_NOW());
 		current_channel=(current_channel+1)%16;
+		/*if (clock_seconds()%150 < 2){
+		printf("b_clock_init: %lu %u", clock_seconds(), RTIMER_NOW());
+			clock_set_seconds(2);
+			printf(" a_clock_init: %lu %u\n", clock_seconds(), RTIMER_NOW());}*/
 
-		if (clock_seconds()%150 < 2){
+		/*if (clock_seconds()%150 < 2){
 			printf("succ_b:%u b_fail:%u b_fail_s:%u b_fail_tx:%u\n"
 					"succ_B_PDR=%u  validB_PDR=%u  PDR=%u\n"
 					"succ_:%u fail:%u f_COL:%u f_ACK:%u f_DEF:%u f_ERR:%u\n",
 					succ_beacon, beacon_failed_sync+beacon_failed_tx, beacon_failed_sync, beacon_failed_tx,
 					(succ_beacon*100)/(succ_beacon+beacon_failed_sync), (succ_beacon*100)/(succ_beacon+beacon_failed_sync+beacon_failed_tx), (successful*100)/(successful+failed),
 					successful, failed, failed_COL, fail_ACK, failed_DEF, failed_ERR);
+		}*/
+		if (clock_seconds()%30 < 2){
+			printf("b_fail_s:%u \n",
+					beacon_failed_sync);
 		}
 		rtimer_set(&reciever_powercycle_timer,RTIMER_NOW()+ 5, 0,(void (*)(struct rtimer *, void *))reception_powercycle,NULL);
 		PT_YIELD(&pt);
@@ -885,7 +898,7 @@ packet_input(void)
 	}*/if(0){}
 	else{
 		if(NETSTACK_FRAMER.parse() < 0) {
-			printf("emmac: failed to parse %u\n", packetbuf_datalen());
+			PRINTF("emmac: failed to parse %u\n", packetbuf_datalen());
 		} else /*if(!linkaddr_cmp(packetbuf_addr(PACKETBUF_ADDR_RECEIVER),
 				&linkaddr_node_addr) &&
 				!packetbuf_holds_broadcast()) {
@@ -894,13 +907,13 @@ packet_input(void)
 			PRINTF("emmac: not for us\n");
 
 		} else */{
-			printf("RX:%d\n", original_dataptr[2]);
+			PRINTF("RX:%d\n", original_dataptr[2]);
 			int duplicate = 0;
 			/* Check for duplicate packet. */
 			duplicate = mac_sequence_is_duplicate();
 			if(duplicate && original_dataptr[0]!=0) {
 				// Si el paquete recibido es un duplicado entonces lo desechamos
-				printf("emmac: drop duplicate link layer packet %u\n",
+				PRINTF("emmac: drop duplicate link layer packet %u\n",
 						packetbuf_attr(PACKETBUF_ATTR_PACKET_ID));
 			} else {
 				mac_sequence_register_seqno();
