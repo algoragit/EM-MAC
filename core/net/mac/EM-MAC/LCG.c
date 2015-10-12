@@ -53,6 +53,8 @@ unsigned int get_neighbor_wake_up_time(neighbor_state v, uint8_t *neighbor_chann
 	if (!(((local_seconds-diff_secs)/300)==(next_wake_secs/300))){
 		next_wake_tics=0;
 		next_wake_secs=((local_seconds-diff_secs)/300)*300;
+		current_seed=v.node_link_addr.u8[7];
+		channel_list_index=0;
 	}
 	while ((next_wake_secs < (local_seconds - diff_secs)) ||
 			((next_wake_tics < (unsigned int)((long int)(RTIMER_NOW())-diff_tics)) && (next_wake_secs == (local_seconds - diff_secs)))){

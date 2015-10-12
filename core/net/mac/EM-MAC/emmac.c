@@ -87,6 +87,7 @@ unsigned int time_to_wait_awake;
 static int offset;
 static int sent_times=0;
 static int incoming_packet=0;
+static int restarted=0;
 //static int unicast_incoming=0;
 static unsigned int succ_beacon=0;
 static unsigned int successful=0;
@@ -335,12 +336,20 @@ static char reception_powercycle(void)
 			off(0);
 			NETSTACK_RADIO.read(dummy_buf_to_flush_rxfifo,1);	// This is done to remove any packet remaining in the Reception FIFO
 		}
-		initial_rand_seed_temp=(15213*initial_rand_seed)+11237;
-		//printf("Sleep:%u (SEED:%u)\n",initial_rand_seed_temp%RTIMER_SECOND + RTIMER_SECOND/2, initial_rand_seed_temp);//}
-		if (clock_seconds()>300){
+		if (clock_seconds()%300==0 && restarted==0){
 			clock_set_seconds((clock_seconds()/300)*300);
 			clock_init();
+			restarted=1;
+			initial_rand_seed_temp=linkaddr_node_addr.u8[7];
+			current_channel=0;
+			printf("restart %lu\n",clock_seconds());
 		}
+		if (clock_seconds()%300 > 0 && restarted==1){
+			restarted = 0;
+		}
+		initial_rand_seed_temp=(15213*initial_rand_seed)+11237;
+		//printf("Sleep:%u (SEED:%u)\n",initial_rand_seed_temp%RTIMER_SECOND + RTIMER_SECOND/2, initial_rand_seed_temp);//}
+
 		rtimer_set(&reciever_powercycle_timer,(w_up_time+(initial_rand_seed_temp%RTIMER_SECOND + RTIMER_SECOND/2)), 0,(void (*)(struct rtimer *, void *))reception_powercycle,NULL);
 		//printf("pc_off:%u\npc_              %u  %u\n", RTIMER_NOW(), initial_rand_seed_temp%RTIMER_SECOND + RTIMER_SECOND/2, w_up_time+(initial_rand_seed_temp%RTIMER_SECOND + RTIMER_SECOND/2));
 		if (transmitting!=0 /*|| neighbor_discovery_flag*/){
@@ -451,18 +460,18 @@ static char reception_powercycle(void)
 			clock_set_seconds(2);
 			printf(" a_clock_init: %lu %u\n", clock_seconds(), RTIMER_NOW());}*/
 
-		/*if (clock_seconds()%150 < 2){
-			printf("succ_b:%u b_fail:%u b_fail_s:%u b_fail_tx:%u\n"
-					"succ_B_PDR=%u  validB_PDR=%u  PDR=%u\n"
+		if (clock_seconds()%150 < 2){
+			printf("succ_B_PDR=%u  validB_PDR=%u  PDR=%u\n"
+					"succ_b:%u b_fail:%u b_fail_s:%u b_fail_tx:%u\n"
 					"succ_:%u fail:%u f_COL:%u f_ACK:%u f_DEF:%u f_ERR:%u\n",
-					succ_beacon, beacon_failed_sync+beacon_failed_tx, beacon_failed_sync, beacon_failed_tx,
 					(succ_beacon*100)/(succ_beacon+beacon_failed_sync), (succ_beacon*100)/(succ_beacon+beacon_failed_sync+beacon_failed_tx), (successful*100)/(successful+failed),
+					succ_beacon, beacon_failed_sync+beacon_failed_tx, beacon_failed_sync, beacon_failed_tx,
 					successful, failed, failed_COL, fail_ACK, failed_DEF, failed_ERR);
-		}*/
-		if (clock_seconds()%30 < 2){
+		}
+		/*if (clock_seconds()%30 < 2){
 			printf("b_fail_s:%u \n",
 					beacon_failed_sync);
-		}
+		}*/
 		rtimer_set(&reciever_powercycle_timer,RTIMER_NOW()+ 5, 0,(void (*)(struct rtimer *, void *))reception_powercycle,NULL);
 		PT_YIELD(&pt);
 	}
