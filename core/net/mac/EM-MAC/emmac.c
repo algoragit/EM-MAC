@@ -87,7 +87,8 @@ unsigned int time_to_wait_awake;
 static int offset;
 static int sent_times=0;
 static int incoming_packet=0;
-static int restarted=0;
+unsigned int iteration_out;
+//static int restarted=0;
 //static int unicast_incoming=0;
 static unsigned int succ_beacon=0;
 static unsigned int successful=0;
@@ -336,7 +337,7 @@ static char reception_powercycle(void)
 			off(0);
 			NETSTACK_RADIO.read(dummy_buf_to_flush_rxfifo,1);	// This is done to remove any packet remaining in the Reception FIFO
 		}
-		if (clock_seconds()%300==0 && restarted==0){
+		/*if (clock_seconds()%300==0 && restarted==0){
 			clock_set_seconds((clock_seconds()/300)*300);
 			clock_init();
 			restarted=1;
@@ -346,7 +347,7 @@ static char reception_powercycle(void)
 		}
 		if (clock_seconds()%300 > 0 && restarted==1){
 			restarted = 0;
-		}
+		}*/
 		initial_rand_seed_temp=(15213*initial_rand_seed)+11237;
 		//printf("Sleep:%u (SEED:%u)\n",initial_rand_seed_temp%RTIMER_SECOND + RTIMER_SECOND/2, initial_rand_seed_temp);//}
 
@@ -416,23 +417,12 @@ static char reception_powercycle(void)
 				// Check if a packet was received
 				//printf("%d%d\n", NETSTACK_RADIO.pending_packet(), NETSTACK_RADIO.receiving_packet());
 				if (NETSTACK_RADIO.pending_packet() || incoming_packet==1 ){
-					//unicast_incoming=0;
-					/*if (!packetbuf_holds_broadcast()){
-						unicast_incoming=1;
-					}*/
 					rtimer_set(&reciever_powercycle_timer,RTIMER_NOW()+ 150, 0,(void (*)(struct rtimer *, void *))reception_powercycle,NULL);
 					//leds_blink();
 					//printf("t1:%d", time_to_wait_awake);
 					time_to_wait_awake=400 + ((RTIMER_NOW()-wt4powercycle));
 					//printf(" t2:%d %u %u\n", time_to_wait_awake, wt4powercycle+time_to_wait_awake, RTIMER_NOW());
 					PT_YIELD(&pt);
-					/*printf("datal:%u %d %d %d %d\n",
-							packetbuf_datalen(), NETSTACK_RADIO.pending_packet(),
-							incoming_packet, transmitting, RTIMER_NOW() < (wt4powercycle + time_to_wait_awake));
-					leds_blink();*/
-					/*if (unicast_incoming==1){
-						break;
-					}*/
 					if ((wt4powercycle+time_to_wait_awake) <= 400){
 						offset=400;
 					}else {
@@ -550,7 +540,7 @@ send_one_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver, int result)
 						beacon_failed_tx++;
 						break;
 					} else {
-						printf("wait:%d-%u\n", receiver.u8[7],RTIMER_NOW()- wt);
+						printf("wait:%d-%u in %u\n", receiver.u8[7],RTIMER_NOW()- wt, iteration_out);
 						beacon_received=1;
 					}
 				}
@@ -562,7 +552,7 @@ send_one_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver, int result)
 		//printf("RES=%d_%d ", 1, receiver.u8[7]);
 		off(0);
 		if (good_beacon==0){
-			printf("RES=%d_%d RxNotFound\n", 1, receiver.u8[7]);
+			printf("RES=%d_%u RxNotFound\n", 1, receiver.u8[7]);
 			beacon_failed_sync++;
 		}
 		transmitting=0;
@@ -785,7 +775,8 @@ send_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver, struct rdc_buf_
 	unsigned int neighbor_wake;
 	// The purpose of the while is to avoid neighbor wake-ups closer to the current time than time_in_advance
 	while (done==0){
-		neighbor_wake = get_neighbor_wake_up_time(get_neighbor_state(Neighbors, receiver), &neighbor_channel);
+		iteration_out=0;
+		neighbor_wake = get_neighbor_wake_up_time(get_neighbor_state(Neighbors, receiver), &neighbor_channel, &iteration_out);
 		unsigned int rt_now=RTIMER_NOW();
 		if (rt_now>time_in_advance && rt_now<(unsigned int)(0-time_in_advance)){
 			if (neighbor_wake<(rt_now-time_in_advance) || neighbor_wake>(rt_now+time_in_advance)) 	{done=1;}
@@ -904,8 +895,8 @@ packet_input(void)
 	/*if(packetbuf_datalen() == 16 || packetbuf_datalen() == 5) {
 		// Ignore ACK packets
 		printf("emmac: ignored ack\n");
-	}*/if(0){}
-	else{
+	}if(0){}
+	else{*/
 		if(NETSTACK_FRAMER.parse() < 0) {
 			PRINTF("emmac: failed to parse %u\n", packetbuf_datalen());
 		} else /*if(!linkaddr_cmp(packetbuf_addr(PACKETBUF_ADDR_RECEIVER),
@@ -977,7 +968,7 @@ packet_input(void)
 				NETSTACK_MAC.input();
 			}
 		}
-	}
+	//}
 	//NETSTACK_RADIO.read(dummy_buf_to_flush_rxfifo,1);
 	incoming_packet=0;
 	rtimer_set(&reciever_powercycle_timer,RTIMER_NOW()+ 5, 0,(void (*)(struct rtimer *, void *))reception_powercycle,NULL);
