@@ -13,6 +13,7 @@ typedef struct {
 	unsigned int 	wake_time_seconds;
 	long int 		n;                       // time difference in tics
 	unsigned int 	blacklist;
+	unsigned short	consecutive_failed_tx;
 } neighbor_state;
 
 int check_if_neighbor_exist(list_t  Neighbors,linkaddr_t addr);

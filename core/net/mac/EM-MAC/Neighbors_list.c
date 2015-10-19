@@ -38,6 +38,7 @@ neighbor_state get_neighbor_state (list_t  Neighbors,linkaddr_t addr)
 			st.last_channel=s->last_channel;
 			st.wake_time_seconds=s->wake_time_seconds;
 			st.n=s->n;
+			st.consecutive_failed_tx=s->consecutive_failed_tx;
 			linkaddr_copy(&st.node_link_addr,&addr);
 			return st;
 		}

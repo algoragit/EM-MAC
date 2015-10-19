@@ -99,6 +99,18 @@ static unsigned int failed_COL=0;
 static unsigned int fail_ACK=0;
 static unsigned int failed_DEF=0;
 static unsigned int failed_ERR=0;
+static unsigned int successful_after_try_again=0;
+static unsigned int failed_try_again=0;
+
+/* Every neighbor has its own packet queue */
+struct neighbor_queue {
+	struct neighbor_queue *next;
+	linkaddr_t addr;
+	struct ctimer transmit_timer;
+	uint8_t transmissions;
+	uint8_t collisions, deferrals;
+	LIST_STRUCT(queued_packet_list);
+};
 
 #define MEMB_SIZE 4
 MEMB(neighbor_memb, neighbor_state, MEMB_SIZE);
@@ -107,10 +119,13 @@ LIST(Neighbors);
 /*---------------------------------------------------------------------------*/
 static int 	off					(int keep_radio_on);
 static int 	check_if_radio_on	(void);
+static int 	on					(void);
+static unsigned int get_w_up_advance(unsigned short failed_tx);
 static void	neighbor_discovery	(void);
 static char	reception_powercycle(void);
 static int 	send_one_packet		(mac_callback_t sent, void *ptr, linkaddr_t receiver, int result);
 static int 	send_packet			(mac_callback_t sent, void *ptr, linkaddr_t receiver, struct rdc_buf_list *buf_list);
+static int	process_packet		(mac_callback_t sent, void *ptr, struct rdc_buf_list *buf_list);
 static void	send_list			(mac_callback_t sent, void *ptr, struct rdc_buf_list *buf_list);
 static void	packet_input		(void);
 static unsigned short channel_check_interval(void);
@@ -147,6 +162,21 @@ on(void)
 	if(!check_if_radio_on()){
 		return NETSTACK_RADIO.on();
 	}
+}
+/****************************************************************/
+static unsigned int get_w_up_advance(unsigned short failed_tx)
+{
+	unsigned short i;
+	unsigned int temp=328;
+	if(failed_tx==0 || failed_tx==1){
+		return 328;}
+	if(failed_tx==8){
+		return 24000;
+	}
+
+	for(i=2;i<=failed_tx;i++){
+		temp=temp*2;}
+	return temp;
 }
 /********************************************************************************/
 /*Proceso de descubrimiento de vecinos que se lleva a cabo en la funcion init()*/
@@ -222,7 +252,7 @@ static void neighbor_discovery(void)
 				/* The purpose of this while is to schedule neighbor transmissions according to the neighbor ID
 				 * to avoid collisions of ACK packets from different neighbors *******************************/
 				unsigned int time=RTIMER_NOW();
-				while((RTIMER_NOW() < (time + (linkaddr_node_addr.u8[7]-1)*(RTIMER_SECOND/1500)))){}
+				while((RTIMER_NOW() < (time + (linkaddr_node_addr.u8[7]-1)*(RTIMER_SECOND/1000)))){}
 				/***********/
 				ack_len=22;
 				t_seconds=clock_seconds();
@@ -271,10 +301,20 @@ static void neighbor_discovery(void)
 				uint8_t last_ch = beacon_buf[11];					// last visited channel
 				t_tic=beacon_buf[20]+ (beacon_buf[21] << 8); 		//tiempo actual en tics
 				//printf("ch rcv: %d\n", last_ch);
-				if (sender_addr.u8[7]!=0){
+				if (sender_addr.u8[7]!=0 && sender_addr.u8[7]<200){
+					/*printf("sRX ");
+					if (sender_addr.u8[7]==255){
+						int i;
+						for (i=0;i<22;i++){
+							printf("%02x ", beacon_buf[i]);
+						}
+					}
+					printf("\n");*/
 					/* Update the state information for the node that sent the ACK */
 					for(n = list_head(Neighbors); n != NULL; n = list_item_next(n)) {
 						if(linkaddr_cmp(&sender_addr, &n->node_link_addr)) {
+							//printf("u:%d\n", sender_addr.u8[7]);
+
 							n->wake_time_tics=w_time;
 							n->wake_time_seconds=t_sec;
 							n->last_seed=last_generated;
@@ -284,6 +324,7 @@ static void neighbor_discovery(void)
 							if (abs(n->n) < RTIMER_SECOND/2 && n->m != 0){
 								n->m = (abs(n->m)-1) * (n->m/(abs(n->m)));
 							}
+							n->consecutive_failed_tx=0;
 							break;
 						}
 					}
@@ -303,6 +344,8 @@ static void neighbor_discovery(void)
 						if (abs(n->n) < RTIMER_SECOND/2 && n->m != 0){
 							n->m = (abs(n->m)-1) * (n->m/(abs(n->m)));
 						}
+						n->consecutive_failed_tx=0;
+						//printf("a:%d\n", n->node_link_addr.u8[7]);
 						list_add(Neighbors, n);
 					}
 				}
@@ -349,12 +392,13 @@ static char reception_powercycle(void)
 			restarted = 0;
 		}*/
 		initial_rand_seed_temp=(15213*initial_rand_seed)+11237;
-		//printf("Sleep:%u (SEED:%u)\n",initial_rand_seed_temp%RTIMER_SECOND + RTIMER_SECOND/2, initial_rand_seed_temp);//}
+		//if (linkaddr_node_addr.u8[7]==3){
+		printf("_off:%u\n",initial_rand_seed_temp%RTIMER_SECOND + RTIMER_SECOND/2, initial_rand_seed_temp);//}
 
 		rtimer_set(&reciever_powercycle_timer,(w_up_time+(initial_rand_seed_temp%RTIMER_SECOND + RTIMER_SECOND/2)), 0,(void (*)(struct rtimer *, void *))reception_powercycle,NULL);
 		//printf("pc_off:%u\npc_              %u  %u\n", RTIMER_NOW(), initial_rand_seed_temp%RTIMER_SECOND + RTIMER_SECOND/2, w_up_time+(initial_rand_seed_temp%RTIMER_SECOND + RTIMER_SECOND/2));
 		if (transmitting!=0 /*|| neighbor_discovery_flag*/){
-			printf("TxPCySl.%u %u\n", w_up_time+(initial_rand_seed_temp%RTIMER_SECOND + RTIMER_SECOND/2), RTIMER_NOW());
+			//printf("TxPCySl.%u %u\n", w_up_time+(initial_rand_seed_temp%RTIMER_SECOND + RTIMER_SECOND/2), RTIMER_NOW());
 			leds_blink();
 		}
 		PT_YIELD(&pt);
@@ -370,7 +414,8 @@ static char reception_powercycle(void)
 		 * which will be transmitted when the state is requested through an ACK */
 		w_up_time=RTIMER_NOW();
 		time_in_seconds=clock_seconds();
-		//printf("pc_on:%u\n", w_up_time);
+		//if (linkaddr_node_addr.u8[7]==3){
+		printf("_on:%u\n", w_up_time);//}
 		initial_rand_seed=initial_rand_seed_temp;
 		w_up_ch = list_of_channels[current_channel];
 		/* TODO: Get the blacklist and embed it into the beacon. Now, the value for the blacklist is fixed to 100 */
@@ -436,7 +481,7 @@ static char reception_powercycle(void)
 			}
 			//printf("*\n", RTIMER_NOW());
 		}else {
-			printf("TxPCyW-Up.\n");
+			//printf("TxPCyW-Up.\n");
 			//leds_blink();
 			if (waiting_to_transmit==1){
 				off(0);
@@ -451,12 +496,15 @@ static char reception_powercycle(void)
 			printf(" a_clock_init: %lu %u\n", clock_seconds(), RTIMER_NOW());}*/
 
 		if (clock_seconds()%150 < 2){
-			printf("succ_B_PDR=%u  validB_PDR=%u  PDR=%u\n"
+			printf("succ:%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u\n",
+					succ_beacon, beacon_failed_sync+beacon_failed_tx, beacon_failed_sync, beacon_failed_tx,
+					successful, failed, failed_COL, fail_ACK, failed_DEF, failed_ERR, failed_try_again, successful_after_try_again);
+			/*printf("succ_B_PDR=%u  validB_PDR=%u  PDR=%u\n"
 					"succ_b:%u b_fail:%u b_fail_s:%u b_fail_tx:%u\n"
-					"succ_:%u fail:%u f_COL:%u f_ACK:%u f_DEF:%u f_ERR:%u\n",
+					"succ_:%u fail:%u f_COL:%u f_ACK:%u f_DEF:%u f_ERR:%u,%u,%u\n",
 					(succ_beacon*100)/(succ_beacon+beacon_failed_sync), (succ_beacon*100)/(succ_beacon+beacon_failed_sync+beacon_failed_tx), (successful*100)/(successful+failed),
 					succ_beacon, beacon_failed_sync+beacon_failed_tx, beacon_failed_sync, beacon_failed_tx,
-					successful, failed, failed_COL, fail_ACK, failed_DEF, failed_ERR);
+					successful, failed, failed_COL, fail_ACK, failed_DEF, failed_ERR, failed_try_again, successful_after_try_again);*/
 		}
 		/*if (clock_seconds()%30 < 2){
 			printf("b_fail_s:%u \n",
@@ -507,7 +555,7 @@ send_one_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver, int result)
 	wt = RTIMER_NOW();
 	int wait_for_neighbor=1310;
 	if (result==3){
-		wait_for_neighbor=400;
+		wait_for_neighbor=400;  //If the nodes did rendezvous nut there was a collision, then we wait a shorter time for the ACK
 	}
 	while(RTIMER_CLOCK_LT(RTIMER_NOW(), wt + wait_for_neighbor) && beacon_received==0) {  //It should be "wt + Time_from_Chasing_algorithm but for now we just use 40ms (remember in Cooja the time is twice the real time)
 		/*if( !check_if_radio_on() && !neighbor_discovery_flag ){
@@ -531,16 +579,13 @@ send_one_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver, int result)
 				beacon_src_addr.u8[6] = beaconbuf[10];
 				beacon_src_addr.u8[7] = beaconbuf[11];
 				if(linkaddr_cmp(&beacon_src_addr, &receiver)){
-					// printf("It's a Beacon from node %d and I'm waiting for node %d\n", beaconbuf[11], receiver.u8[7]);
-					//printf("B %d\n", beacon_src_addr.u8[7]);
-					//printf("bb[1]=%d\n", beaconbuf[1]);
 					good_beacon=1;
 					if (beaconbuf[1]==1){
-						printf("RES=%d_%d RxBusy\n", 1, receiver.u8[7]);
+						printf("RES=%d_%d RxBusy\n_r_wait:%d,%u,%u(t)\n", 1, receiver.u8[7], receiver.u8[7], RTIMER_NOW()- wt, iteration_out);
 						beacon_failed_tx++;
 						break;
 					} else {
-						printf("wait:%d-%u in %u\n", receiver.u8[7],RTIMER_NOW()- wt, iteration_out);
+						printf("_r_wait:%d,%u,%u\n", receiver.u8[7],RTIMER_NOW()- wt, iteration_out);
 						beacon_received=1;
 					}
 				}
@@ -552,16 +597,24 @@ send_one_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver, int result)
 		//printf("RES=%d_%d ", 1, receiver.u8[7]);
 		off(0);
 		if (good_beacon==0){
-			printf("RES=%d_%u RxNotFound\n", 1, receiver.u8[7]);
+			printf("RES=%d_%u RxNotFound", 1, receiver.u8[7]);
+			if (result==3){
+				printf(" after collision");
+			}
+			printf("\n_s_wait:%d,(s),%u\n", receiver.u8[7], iteration_out);
 			beacon_failed_sync++;
 		}
 		transmitting=0;
 		leds_off(7);
 		failed++;
 		failed_COL++;
+		/*if (packetbuf_holds_broadcast()){
+			return 3;
+		} else {*/
 		//return MAC_TX_COLLISION;
 		mac_call_sent_callback(sent, ptr, 1, 1);
 		return 0;
+		//}
 	}else{
 		succ_beacon++;
 		/* Backoff based on the node ID:
@@ -594,8 +647,8 @@ send_one_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver, int result)
 	ack_len=14;
 	//}
 
-	if(NETSTACK_FRAMER.create() < 0) {/*Se llama al framer para crea la trama*/
-		/* Failed to allocate space for headers */
+	if(NETSTACK_FRAMER.create() < 0) {//Se llama al framer para crea la trama
+		// Failed to allocate space for headers
 		PRINTF("emmac: send failed, too large header\n");
 		ret = MAC_TX_ERR_FATAL;
 	} else {
@@ -613,8 +666,8 @@ send_one_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver, int result)
          already received a packet that needs to be read before
          sending with auto ack. */
 			leds_on(LEDS_GREEN);
-			ret = MAC_TX_COLLISION;
 			printf("sent Col sding\n");
+			failed_try_again++;
 			return 3;
 		}
 		else {
@@ -706,10 +759,11 @@ send_one_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver, int result)
 									}
 									ret = MAC_TX_OK;
 									break;		// This breaks the While after an ACK has been received and processed.
-								} else {
-									/* Not an ACK or ACK not for us: collision */
-									ret = MAC_TX_COLLISION;
-								}
+								} /*else {
+									// Not an ACK or ACK not for us: collision
+									printf("ACK f");
+									//ret = MAC_TX_COLLISION;
+								}*/
 							}
 							/*else {
 									printf("emmac tx noack\n");
@@ -723,7 +777,7 @@ send_one_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver, int result)
 				break;
 			case RADIO_TX_COLLISION:
 				printf("sent Col TX\n");
-				ret = MAC_TX_COLLISION;
+				failed_try_again++;
 				return 3;
 				//break;
 			default:
@@ -736,6 +790,7 @@ send_one_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver, int result)
 	switch(ret){
 	case MAC_TX_OK:
 		last_sent_ok = 1;
+		successful_after_try_again++;
 		successful++;
 		break;
 	case MAC_TX_COLLISION:
@@ -785,9 +840,7 @@ send_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver, struct rdc_buf_
 		}
 	}
 	//printf("Nw:%u %u \n", neighbor_wake, RTIMER_NOW());
-	if ((neighbor_wake >= time_in_advance) && (neighbor_wake < (unsigned int)(0-time_in_advance))){  //
-
-		/* TODO Solve the issue of not processing receiving packets while waiting for the neighbor to wake-up */
+	if ((neighbor_wake >= time_in_advance) && (neighbor_wake < (unsigned int)(0-time_in_advance))){
 		while(!((RTIMER_NOW() >= (neighbor_wake-time_in_advance)) && (RTIMER_NOW() <= (neighbor_wake+time_in_advance)))){
 			// Avoid bug when RTIMER overflows and starts over
 			while(RTIMER_NOW()<5 || RTIMER_NOW()>(unsigned int)(0-5)){}
@@ -815,23 +868,65 @@ send_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver, struct rdc_buf_
 	sent_times=0;
 	do{
 		printf("sent %d\n", ++sent_times);
-		queuebuf_to_packetbuf(buf_list->buf); // If this line is not present, the las node in the neighbor list receives a packet with part of the header repeated. Don't know why!
+		queuebuf_to_packetbuf(buf_list->buf); // If this line is not present, the last node in the neighbor list receives a packet with part of the header repeated. Don't know why!
 		result=send_one_packet(sent, ptr, receiver, result);
 		NETSTACK_RADIO.read(dummy_buf_to_flush_rxfifo,1);	// This is done to remove any packet remaining in the Reception FIFO
 	} while (result==3);
 	return result;
 }
 /*---------------------------------------------------------------------------*/
+static int
+qsend_packet(mac_callback_t sent_callback, void *ptr){
+	struct neighbor_queue *n=ptr;
+	struct rdc_buf_list *q=list_head(n->queued_packet_list);
+	return process_packet(sent_callback, ptr, q);
+}
+/*---------------------------------------------------------------------------*/
+static int
+process_packet(mac_callback_t sent, void *ptr, struct rdc_buf_list *buf_list)
+{
+	transmitting = 1;
+	waiting_to_transmit = 1;
+	/* We backup the next pointer, as it may be nullified by
+	 * mac_call_sent_callback() */
+	int last_sent_ok=1;
+	queuebuf_to_packetbuf(buf_list->buf);
+	static  linkaddr_t addr_receiver;
+	linkaddr_copy(&addr_receiver,packetbuf_addr(PACKETBUF_ADDR_RECEIVER));
+	if (!packetbuf_holds_broadcast()){
+		printf("UNICAST to: %d\n", addr_receiver.u8[7]);
+		last_sent_ok = send_packet(sent, ptr, addr_receiver, buf_list);
+	}else {
+		printf("BROADCAST\n");
+		neighbor_state *neighbor_broadcast_to_unicast=list_head(Neighbors);
+		while(neighbor_broadcast_to_unicast != NULL && last_sent_ok) {
+			transmitting = 1;
+			waiting_to_transmit = 1;
+			//packetbuf_set_addr(PACKETBUF_ADDR_RECEIVER, &(neighbor_broadcast_to_unicast->node_link_addr));
+			last_sent_ok = send_packet(sent, ptr, neighbor_broadcast_to_unicast->node_link_addr, buf_list);
+			printf("BCast to:%d\n", neighbor_broadcast_to_unicast->node_link_addr.u8[7]);
+			neighbor_broadcast_to_unicast = list_item_next(neighbor_broadcast_to_unicast);
+			/*if (neighbor_broadcast_to_unicast->node_link_addr.u8[7]==0){
+				printf("Next: ");
+				int i=0;
+				for (i=0;i<8;i++){
+					printf("%02x ", neighbor_broadcast_to_unicast->node_link_addr.u8[i]);
+				}
+				printf("%u %d %u %d %u %lu ", neighbor_broadcast_to_unicast->wake_time_tics, neighbor_broadcast_to_unicast->m,
+						neighbor_broadcast_to_unicast->last_seed, neighbor_broadcast_to_unicast->last_channel, neighbor_broadcast_to_unicast->wake_time_seconds,
+						neighbor_broadcast_to_unicast->n);
+			}*/
+		}
+	}
+	/* If packet transmission was not successful, we should back off and let
+	 * upper layers retransmit, rather than potentially sending out-of-order
+	 * packet fragments. */
+	return last_sent_ok;
+}
+/*---------------------------------------------------------------------------*/
 static void
 send_list(mac_callback_t sent, void *ptr, struct rdc_buf_list *buf_list)
 {
-	/*static struct timer wait_to_recv_timer;
-	if (NETSTACK_RADIO.pending_packet()){
-		printf("pp in sendlist\n");
-		timer_set(&wait_to_recv_timer, CLOCK_SECOND/100);
-		while (!timer_expired(&wait_to_recv_timer)){}
-	}*/
-
 	while(buf_list != NULL) {
 		transmitting = 1;
 		waiting_to_transmit = 1;
@@ -840,38 +935,11 @@ send_list(mac_callback_t sent, void *ptr, struct rdc_buf_list *buf_list)
 		struct rdc_buf_list *next = buf_list->next;
 		int last_sent_ok;
 		queuebuf_to_packetbuf(buf_list->buf);
-		static  linkaddr_t addr_receiver;
-		linkaddr_copy(&addr_receiver,packetbuf_addr(PACKETBUF_ADDR_RECEIVER));
-		if (!packetbuf_holds_broadcast()){
-			printf("UNICAST to: %d\n", addr_receiver.u8[7]);
-			last_sent_ok = send_packet(sent, ptr, addr_receiver, buf_list);
-		}else {
-			printf("BROADCAST\n");
-			neighbor_state *neighbor_broadcast_to_unicast=list_head(Neighbors);
-			while(neighbor_broadcast_to_unicast != NULL && last_sent_ok) {
-				transmitting = 1;
-				waiting_to_transmit = 1;
-				//packetbuf_set_addr(PACKETBUF_ADDR_RECEIVER, &(neighbor_broadcast_to_unicast->node_link_addr));
-				last_sent_ok = send_packet(sent, ptr, neighbor_broadcast_to_unicast->node_link_addr, buf_list);
-				printf("BCast to:%d\n", neighbor_broadcast_to_unicast->node_link_addr.u8[7]);
-				neighbor_broadcast_to_unicast = list_item_next(neighbor_broadcast_to_unicast);
-				/*if (neighbor_broadcast_to_unicast->node_link_addr.u8[7]==0){
-					printf("Next: ");
-					int i=0;
-					for (i=0;i<8;i++){
-						printf("%02x ", neighbor_broadcast_to_unicast->node_link_addr.u8[i]);
-					}
-					printf("%u %d %u %d %u %lu ", neighbor_broadcast_to_unicast->wake_time_tics, neighbor_broadcast_to_unicast->m,
-							neighbor_broadcast_to_unicast->last_seed, neighbor_broadcast_to_unicast->last_channel, neighbor_broadcast_to_unicast->wake_time_seconds,
-							neighbor_broadcast_to_unicast->n);
-				}*/
-			}
-		}
+		last_sent_ok = qsend_packet(sent, ptr);
 		/* If packet transmission was not successful, we should back off and let
 		 * upper layers retransmit, rather than potentially sending out-of-order
 		 * packet fragments. */
 		if(!last_sent_ok) {
-			//printf("Last sent went wrong!\n");
 			return;
 		}
 		buf_list = next;
@@ -897,9 +965,9 @@ packet_input(void)
 		printf("emmac: ignored ack\n");
 	}if(0){}
 	else{*/
-		if(NETSTACK_FRAMER.parse() < 0) {
-			PRINTF("emmac: failed to parse %u\n", packetbuf_datalen());
-		} else /*if(!linkaddr_cmp(packetbuf_addr(PACKETBUF_ADDR_RECEIVER),
+	if(NETSTACK_FRAMER.parse() < 0) {
+		printf("emmac: failed to parse %u\n", packetbuf_datalen());
+	} else /*if(!linkaddr_cmp(packetbuf_addr(PACKETBUF_ADDR_RECEIVER),
 				&linkaddr_node_addr) &&
 				!packetbuf_holds_broadcast()) {
 
@@ -907,67 +975,66 @@ packet_input(void)
 			PRINTF("emmac: not for us\n");
 
 		} else */{
-			PRINTF("RX:%d\n", original_dataptr[2]);
-			int duplicate = 0;
-			/* Check for duplicate packet. */
-			duplicate = mac_sequence_is_duplicate();
-			if(duplicate && original_dataptr[0]!=0) {
-				// Si el paquete recibido es un duplicado entonces lo desechamos
-				PRINTF("emmac: drop duplicate link layer packet %u\n",
-						packetbuf_attr(PACKETBUF_ATTR_PACKET_ID));
-			} else {
-				mac_sequence_register_seqno();
-			}
-
-			if(!duplicate) {
-				frame802154_t recieved_frame;
-				frame_emmac_parse(original_dataptr, original_datalen, &recieved_frame);
-				//printf("sent for me? %d\n", recieved_frame.fcf.ack_required != 0);
-				if(recieved_frame.fcf.frame_type == FRAME802154_DATAFRAME &&
-						/*recieved_frame.fcf.ack_required != 0 &&*/
-						(linkaddr_cmp((linkaddr_t *)&recieved_frame.dest_addr,
-								&linkaddr_node_addr) || packetbuf_holds_broadcast())) {/*Si la trama recibida es de datos y si se requiere ACK y si la direccion del nodo es igual a la direccion de destino de la trama recibida*/
-					uint8_t ackdata[14] = {0};
-					unsigned int t_seconds = (unsigned int)(clock_seconds());
-					if(recieved_frame.fcf.state_flag){
-						/*Entramos aqui si el ACK requiere la informacion de estado del nodo*/
-						ack_len=14;
-
-						ackdata[0] = FRAME802154_ACKFRAME;
-						ackdata[1] = 0;
-						ackdata[2] = recieved_frame.seq;
-						ackdata[3] = w_up_time & 0xff; /*w_up_time es el tiempo en tics del ultimo wake-up*/
-						ackdata[4] = (w_up_time>> 8) & 0xff;
-						ackdata[5] = time_in_seconds & 0xff;/*time_in_seconds es el tiempo en secs del ultimo wake-up*/
-						ackdata[6] = (time_in_seconds>> 8) & 0xff;
-						ackdata[7] = initial_rand_seed & 0xff;
-						ackdata[8] = (initial_rand_seed>>8) & 0xff;
-						ackdata[9] = t_seconds & 0xff;
-						ackdata[10] = (t_seconds>>8) & 0xff;
-						ackdata[11] = w_up_ch;
-						ackdata[12] = 0;/*Se deja vacio para colocar el tiempo actual en tics a nivel fisico*/
-						ackdata[13] = 0;
-						linkaddr_t test;
-						linkaddr_copy(&test,(linkaddr_t *)&recieved_frame.src_addr);
-						//printf("ACK:%u %d\n", test.u8[7], recieved_frame.seq);
-						while (!NETSTACK_RADIO.channel_clear()){}
-						packetbuf_set_attr( PACKETBUF_ATTR_NODE_RADIO_TIMESTAMP_FLAG, 1);/*Se activa el timestamp a nivel fisico*/
-						NETSTACK_RADIO.send(ackdata, ack_len);
-						packetbuf_set_attr( PACKETBUF_ATTR_NODE_RADIO_TIMESTAMP_FLAG, 0);/*Se desactiva el timestamp a nivel fisico*/
-					}
-					else{
-						/*Entramos aqui si el ACK no requiere la informacion de estado del nodo*/
-						ack_len=3;
-						ackdata[0] = FRAME802154_ACKFRAME;
-						ackdata[1] = 0;
-						ackdata[2] = recieved_frame.seq;
-						NETSTACK_RADIO.send(ackdata, ack_len);
-					}
-
-				}
-				NETSTACK_MAC.input();
-			}
+		printf("RX:%d\n", original_dataptr[2]);
+		int duplicate = 0;
+		/* Check for duplicate packet. */
+		duplicate = mac_sequence_is_duplicate();
+		if(duplicate && original_dataptr[0]!=0) {
+			// Si el paquete recibido es un duplicado entonces lo desechamos
+			printf("emmac: drop duplicate link layer packet %u\n",
+					packetbuf_attr(PACKETBUF_ATTR_PACKET_ID));
+		} else {
+			mac_sequence_register_seqno();
 		}
+
+		if(!duplicate) {
+			frame802154_t recieved_frame;
+			frame_emmac_parse(original_dataptr, original_datalen, &recieved_frame);
+			//printf("sent for me? %d\n", recieved_frame.fcf.ack_required != 0);
+			if(recieved_frame.fcf.frame_type == FRAME802154_DATAFRAME &&
+					(linkaddr_cmp((linkaddr_t *)&recieved_frame.dest_addr,
+							&linkaddr_node_addr) || packetbuf_holds_broadcast())) {/*Si la trama recibida es de datos y si se requiere ACK y si la direccion del nodo es igual a la direccion de destino de la trama recibida*/
+				uint8_t ackdata[14] = {0};
+				unsigned int t_seconds = (unsigned int)(clock_seconds());
+				if(recieved_frame.fcf.state_flag){
+					/*Entramos aqui si el ACK requiere la informacion de estado del nodo*/
+					ack_len=14;
+
+					ackdata[0] = FRAME802154_ACKFRAME;
+					ackdata[1] = 0;
+					ackdata[2] = recieved_frame.seq;
+					ackdata[3] = w_up_time & 0xff; /*w_up_time es el tiempo en tics del ultimo wake-up*/
+					ackdata[4] = (w_up_time>> 8) & 0xff;
+					ackdata[5] = time_in_seconds & 0xff;/*time_in_seconds es el tiempo en secs del ultimo wake-up*/
+					ackdata[6] = (time_in_seconds>> 8) & 0xff;
+					ackdata[7] = initial_rand_seed & 0xff;
+					ackdata[8] = (initial_rand_seed>>8) & 0xff;
+					ackdata[9] = t_seconds & 0xff;
+					ackdata[10] = (t_seconds>>8) & 0xff;
+					ackdata[11] = w_up_ch;
+					ackdata[12] = 0;/*Se deja vacio para colocar el tiempo actual en tics a nivel fisico*/
+					ackdata[13] = 0;
+					linkaddr_t test;
+					linkaddr_copy(&test,(linkaddr_t *)&recieved_frame.src_addr);
+					//printf("ACK:%u %d\n", test.u8[7], recieved_frame.seq);
+					while (!NETSTACK_RADIO.channel_clear()){}
+					packetbuf_set_attr( PACKETBUF_ATTR_NODE_RADIO_TIMESTAMP_FLAG, 1);/*Se activa el timestamp a nivel fisico*/
+					NETSTACK_RADIO.send(ackdata, ack_len);
+					packetbuf_set_attr( PACKETBUF_ATTR_NODE_RADIO_TIMESTAMP_FLAG, 0);/*Se desactiva el timestamp a nivel fisico*/
+				}
+				else{
+					/*Entramos aqui si el ACK no requiere la informacion de estado del nodo*/
+					ack_len=3;
+					ackdata[0] = FRAME802154_ACKFRAME;
+					ackdata[1] = 0;
+					ackdata[2] = recieved_frame.seq;
+					NETSTACK_RADIO.send(ackdata, ack_len);
+				}
+
+			}
+			NETSTACK_MAC.input();
+		}
+	}
 	//}
 	//NETSTACK_RADIO.read(dummy_buf_to_flush_rxfifo,1);
 	incoming_packet=0;
