@@ -81,7 +81,7 @@ unsigned int get_neighbor_wake_up_time(neighbor_state v, uint8_t *neighbor_chann
 		/*printf("Neighbor: %d  POINT: c_seed=%u secs=%u tics_t=%u tics_a=%u  L_SECS:%lu\n",
 				v.node_link_addr.u8[7], current_seed, next_wake_secs, next_wake_tics_temp, next_wake_tics, local_seconds);*/
 		//if(linkaddr_node_addr.u8[7]==1 && local_seconds>1260 && v.node_link_addr.u8[7]==3){
-			printf("debug:%u %u %u\n",next_wake_tics,next_wake_tics+diff_tics,channel_list[channel_list_index]);
+			//printf("debug:%u %u %u\n",next_wake_tics,next_wake_tics+diff_tics,channel_list[channel_list_index]);
 		//}
 		//printf(" next_wake: %u\n", next_wake_tics);*/
 	}

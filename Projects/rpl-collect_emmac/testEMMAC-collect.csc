@@ -257,7 +257,7 @@ make udp-sink.z1 TARGET=z1</commands>
   <plugin>
     org.contikios.cooja.plugins.SimControl
     <width>282</width>
-    <z>0</z>
+    <z>1</z>
     <height>160</height>
     <location_x>433</location_x>
     <location_y>-2</location_y>
@@ -274,7 +274,7 @@ make udp-sink.z1 TARGET=z1</commands>
       <viewport>0.8840885169356479 0.0 0.0 0.8840885169356479 192.74411088414348 -10.934631917057905</viewport>
     </plugin_config>
     <width>393</width>
-    <z>4</z>
+    <z>6</z>
     <height>181</height>
     <location_x>1</location_x>
     <location_y>1</location_y>
@@ -282,7 +282,7 @@ make udp-sink.z1 TARGET=z1</commands>
   <plugin>
     org.contikios.cooja.plugins.RadioLogger
     <plugin_config>
-      <split>451</split>
+      <split>448</split>
       <formatted_time />
       <showdups>true</showdups>
       <hidenodests>true</hidenodests>
@@ -292,20 +292,20 @@ make udp-sink.z1 TARGET=z1</commands>
       <alias payload=" 97: 15.4 D C1:0C:00:00:00:00:00:02 C1:0C:00:00:00:00:00:01|IPHC|IPv6|UDP 8775 5688|003684D6 12001600 1F270000 33010B93 0A00B501 01008000 30020300 31080000 00000000 00000000 00000000 00000000 0000" alias="2" />
     </plugin_config>
     <width>853</width>
-    <z>5</z>
-    <height>541</height>
+    <z>4</z>
+    <height>538</height>
     <location_x>1006</location_x>
     <location_y>-1</location_y>
   </plugin>
   <plugin>
     org.contikios.cooja.plugins.LogListener
     <plugin_config>
-      <filter>_r</filter>
+      <filter>_r_wait</filter>
       <formatted_time />
       <coloring />
     </plugin_config>
     <width>355</width>
-    <z>3</z>
+    <z>5</z>
     <height>460</height>
     <location_x>27</location_x>
     <location_y>545</location_y>
@@ -332,7 +332,7 @@ make udp-sink.z1 TARGET=z1</commands>
       <zoomfactor>100000.0</zoomfactor>
     </plugin_config>
     <width>1007</width>
-    <z>2</z>
+    <z>8</z>
     <height>367</height>
     <location_x>4</location_x>
     <location_y>182</location_y>
@@ -345,10 +345,58 @@ make udp-sink.z1 TARGET=z1</commands>
       <coloring />
     </plugin_config>
     <width>423</width>
-    <z>1</z>
+    <z>3</z>
     <height>460</height>
     <location_x>396</location_x>
     <location_y>546</location_y>
+  </plugin>
+  <plugin>
+    org.contikios.cooja.plugins.LogListener
+    <plugin_config>
+      <filter>_r_fail:3</filter>
+      <formatted_time />
+      <coloring />
+    </plugin_config>
+    <width>290</width>
+    <z>2</z>
+    <height>497</height>
+    <location_x>866</location_x>
+    <location_y>538</location_y>
+  </plugin>
+  <plugin>
+    org.contikios.cooja.plugins.LogListener
+    <plugin_config>
+      <filter>succ</filter>
+      <formatted_time />
+      <coloring />
+    </plugin_config>
+    <width>304</width>
+    <z>0</z>
+    <height>474</height>
+    <location_x>795</location_x>
+    <location_y>544</location_y>
+  </plugin>
+  <plugin>
+    org.contikios.cooja.plugins.LogListener
+    <plugin_config>
+      <filter>TiA:1</filter>
+      <formatted_time />
+      <coloring />
+    </plugin_config>
+    <width>344</width>
+    <z>7</z>
+    <height>474</height>
+    <location_x>1158</location_x>
+    <location_y>548</location_y>
+  </plugin>
+  <plugin>
+    org.contikios.cooja.plugins.collectview.CollectView
+    <mote_arg>0</mote_arg>
+    <width>233</width>
+    <z>9</z>
+    <height>72</height>
+    <location_x>723</location_x>
+    <location_y>37</location_y>
   </plugin>
 </simconf>
 
