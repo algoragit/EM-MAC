@@ -89,7 +89,7 @@ unsigned int time_to_wait_awake;
 static int offset;
 static int sent_times=0;
 static int incoming_packet=0;
-unsigned int iteration_out;
+unsigned int iteration_out[6]={0};
 unsigned int time_in_advance=655;
 static unsigned int succ_beacon=0;
 static unsigned int successful=0;
@@ -355,7 +355,7 @@ static char reception_powercycle(void)
 	while (1){
 		if(!neighbor_discovery_flag && (transmitting == waiting_to_transmit) && !syncing){  // TODO If the radio is not sending a packet, the radio should stay ON
 			off(0);
-			//printf("_off:%u\n",initial_rand_seed_temp%RTIMER_SECOND + RTIMER_SECOND/2, initial_rand_seed_temp);//}
+			//printf("_off\n",initial_rand_seed_temp%RTIMER_SECOND + RTIMER_SECOND/2, initial_rand_seed_temp);//}
 			NETSTACK_RADIO.read(dummy_buf_to_flush_rxfifo,1);	// This is done to remove any packet remaining in the Reception FIFO
 		}
 		initial_rand_seed_temp=(15213*initial_rand_seed)+11237;
@@ -379,7 +379,7 @@ static char reception_powercycle(void)
 		 * which will be transmitted when the state is requested through an ACK */
 		w_up_time=RTIMER_NOW();
 		time_in_seconds=clock_seconds();
-		//printf("_on:%u\n", w_up_time);
+		//printf("_on\n", w_up_time);
 		initial_rand_seed=initial_rand_seed_temp;
 		w_up_ch = list_of_channels[current_channel];
 		/* TODO: Get the blacklist and embed it into the beacon. Now, the value for the blacklist is fixed to 100 */
@@ -433,8 +433,10 @@ static char reception_powercycle(void)
 					}
 				}
 			}
-		}else if (!syncing){
-			off(0);
+		}else{
+			if (!syncing && waiting_to_transmit){
+				off(0);
+			}
 		}
 		current_channel=(current_channel+1)%16;
 
@@ -502,11 +504,11 @@ send_one_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver, int result)
 				if(linkaddr_cmp(&beacon_src_addr, &receiver)){
 					good_beacon=1;
 					if (beaconbuf[1]==1){
-						printf("RES=%d_%d RxBusy\n_r_wait:%d,%u,%u(t)\n", 1, receiver.u8[7], receiver.u8[7], RTIMER_NOW()- wt, iteration_out);
+						printf("RES=%d_%d RxBusy\n_r_wait:%d,%u,%u(t)\n", 1, receiver.u8[7], receiver.u8[7], RTIMER_NOW()- wt, iteration_out[0]);
 						beacon_failed_tx++;
 						break;
 					} else {
-						printf("_r_wait:%d,%u,%u\n", receiver.u8[7],RTIMER_NOW()- wt, iteration_out);
+						printf("_r_wait:%d,%u,%u\n", receiver.u8[7],RTIMER_NOW()- wt, iteration_out[0]);
 						beacon_received=1;
 					}
 				}
@@ -542,10 +544,11 @@ send_one_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver, int result)
 		if (good_beacon==0){
 			printf("RES=%d_%u RxNotFound", 1, receiver.u8[7]);
 			if (result==3){
-				printf(" after collision");
+				printf(" after collision _s_");
+			} else {
+				beacon_failed_sync++;
 			}
-			printf("\n_s_wait:%d,(s),%u\n", receiver.u8[7], iteration_out);
-			beacon_failed_sync++;
+			printf("\n_s_wait:%d,(s),%u %u %u %u %u %u\n", receiver.u8[7], iteration_out[0], iteration_out[1], iteration_out[2], iteration_out[3], iteration_out[4], iteration_out[5]);
 		}
 		transmitting=0;
 		leds_off(7);
@@ -564,7 +567,7 @@ send_one_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver, int result)
 		wt=RTIMER_NOW();
 		time_to_send = (unsigned int)(random_rand()%(unsigned int)(77/sent_times)); // 77 tics is the time required to transmit a maximum length frame
 		// The backoff time is divided by the number of failed attempts in order to give better chances to the nodes that have failed previous attempts
-		printf("%u\n",time_to_send);
+		// printf("%u\n",time_to_send);
 		while(RTIMER_NOW() < wt+time_to_send){}
 	}
 	/***************************************************************************************/
@@ -591,7 +594,7 @@ send_one_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver, int result)
          already received a packet that needs to be read before
          sending with auto ack. */
 			leds_on(LEDS_GREEN);
-			printf("sent Col sding\n");
+			//printf("sent Col sding\n");
 			failed_try_again++;
 			return 3;
 		}else {
@@ -686,7 +689,7 @@ send_one_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver, int result)
 				}
 				break;
 			case RADIO_TX_COLLISION:
-				printf("sent Col TX\n");
+				//printf("sent Col TX\n");
 				failed_try_again++;
 				return 3;
 			default:
@@ -706,7 +709,7 @@ send_one_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver, int result)
 		failed++;
 		break;
 	case MAC_TX_NOACK:
-		printf("emmac tx noack\n");
+		//printf("emmac tx noack\n");
 		fail_ACK++;
 		failed++;
 		break;
@@ -901,10 +904,15 @@ send_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver, struct rdc_buf_
 			break;
 		}
 	}
-	printf("TiA:%d,%d\n",time_in_advance, n->consecutive_failed_tx);
+	// printf("TiA:%d,%d\n",time_in_advance, n->consecutive_failed_tx);
 	// The purpose of the while is to avoid neighbor wake-ups closer to the current time than time_in_advance
 	while (done==0){
-		iteration_out=0;
+		iteration_out[0]=0;
+		iteration_out[1]=0;
+		iteration_out[2]=0;
+		iteration_out[3]=0;
+		iteration_out[4]=0;
+		iteration_out[5]=0;
 		neighbor_wake = get_neighbor_wake_up_time(get_neighbor_state(Neighbors, receiver), &neighbor_channel, &iteration_out);
 		unsigned int rt_now=RTIMER_NOW();
 		if (rt_now>time_in_advance && rt_now<(unsigned int)(0-time_in_advance)){
@@ -935,7 +943,7 @@ send_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver, struct rdc_buf_
 	int result=1;
 	sent_times=0;
 	do{
-		printf("sent %d\n", ++sent_times);
+		sent_times++;
 		queuebuf_to_packetbuf(buf_list->buf); // If this line is not present, the last node in the neighbor list receives a packet with part of the header repeated. Don't know why!
 		result=send_one_packet(sent, ptr, receiver, result);
 		NETSTACK_RADIO.read(dummy_buf_to_flush_rxfifo,1);	// This is done to remove any packet remaining in the Reception FIFO
@@ -962,17 +970,17 @@ process_packet(mac_callback_t sent, void *ptr, struct rdc_buf_list *buf_list)
 	static  linkaddr_t addr_receiver;
 	linkaddr_copy(&addr_receiver,packetbuf_addr(PACKETBUF_ADDR_RECEIVER));
 	if (!packetbuf_holds_broadcast()){
-		printf("UNICAST to: %d\n", addr_receiver.u8[7]);
+		//printf("UNICAST to: %d\n", addr_receiver.u8[7]);
 		last_sent_ok = send_packet(sent, ptr, addr_receiver, buf_list);
 	}else {
-		printf("BROADCAST\n");
+		//printf("BROADCAST\n");
 		neighbor_state *neighbor_broadcast_to_unicast=list_head(Neighbors);
 		while(neighbor_broadcast_to_unicast != NULL && last_sent_ok) {
 			transmitting = 1;
 			waiting_to_transmit = 1;
 			//packetbuf_set_addr(PACKETBUF_ADDR_RECEIVER, &(neighbor_broadcast_to_unicast->node_link_addr));
 			last_sent_ok = send_packet(sent, ptr, neighbor_broadcast_to_unicast->node_link_addr, buf_list);
-			printf("BCast to:%d\n", neighbor_broadcast_to_unicast->node_link_addr.u8[7]);
+			//printf("BCast to:%d\n", neighbor_broadcast_to_unicast->node_link_addr.u8[7]);
 			neighbor_broadcast_to_unicast = list_item_next(neighbor_broadcast_to_unicast);
 		}
 	}
@@ -1014,9 +1022,8 @@ packet_input(void)
 	original_dataptr = packetbuf_dataptr();
 
 	if(NETSTACK_FRAMER.parse() < 0) {
-		printf("emmac: failed to parse %u\n", packetbuf_datalen());
+		PRINTF("emmac: failed to parse %u\n", packetbuf_datalen());
 	} else {
-		printf("RX:%d\n", original_dataptr[2]);
 		int duplicate = 0;
 		/* Check for duplicate packet. */
 		duplicate = mac_sequence_is_duplicate();
@@ -1031,7 +1038,6 @@ packet_input(void)
 		if(!duplicate) {
 			frame802154_t recieved_frame;
 			frame_emmac_parse(original_dataptr, original_datalen, &recieved_frame);
-			printf("sent for me? %d\n", recieved_frame.fcf.frame_type);
 			if(recieved_frame.fcf.frame_type == FRAME802154_DATAFRAME &&
 					(linkaddr_cmp((linkaddr_t *)&recieved_frame.dest_addr,
 							&linkaddr_node_addr) || packetbuf_holds_broadcast())) {/*Si la trama recibida es de datos y si se requiere ACK y si la direccion del nodo es igual a la direccion de destino de la trama recibida*/
@@ -1100,7 +1106,7 @@ init(void)
 	transmitting = 0;
 	NETSTACK_RADIO.set_value(RADIO_PARAM_CHANNEL, 26);
 	generate_ch_list(&list_of_channels, linkaddr_node_addr.u8[7], 16);
-	printf("ch list: ");
+	printf("Channel List: ");
 	int i=0;
 	for (i=0; i < 16; i++){
 		printf("%u  ", list_of_channels[i]);
