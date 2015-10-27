@@ -11,7 +11,7 @@ typedef struct {
 	unsigned int 	last_seed;
 	uint8_t			last_channel;
 	unsigned int 	wake_time_seconds;
-	long int 		n;                       // time difference in tics
+	int 			n;                       // time difference in tics
 	unsigned int 	blacklist;
 	unsigned short	consecutive_failed_tx;
 } neighbor_state;

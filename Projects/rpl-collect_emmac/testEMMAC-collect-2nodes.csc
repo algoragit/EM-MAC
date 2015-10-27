@@ -109,7 +109,7 @@ make udp-sink.z1 TARGET=z1</commands>
       <viewport>1.9009653438299572 0.0 0.0 1.9009653438299572 209.57706372938785 -48.46014029163237</viewport>
     </plugin_config>
     <width>384</width>
-    <z>1</z>
+    <z>5</z>
     <height>157</height>
     <location_x>1</location_x>
     <location_y>1</location_y>
@@ -117,15 +117,15 @@ make udp-sink.z1 TARGET=z1</commands>
   <plugin>
     org.contikios.cooja.plugins.LogListener
     <plugin_config>
-      <filter>sync</filter>
+      <filter>ID:2</filter>
       <formatted_time />
       <coloring />
     </plugin_config>
-    <width>397</width>
-    <z>5</z>
+    <width>949</width>
+    <z>1</z>
     <height>474</height>
-    <location_x>43</location_x>
-    <location_y>427</location_y>
+    <location_x>-2</location_x>
+    <location_y>414</location_y>
   </plugin>
   <plugin>
     org.contikios.cooja.plugins.TimeLine
@@ -137,9 +137,9 @@ make udp-sink.z1 TARGET=z1</commands>
       <showRadioHW />
       <showLEDs />
       <showLogOutput />
-      <zoomfactor>100000.0</zoomfactor>
+      <zoomfactor>5000.0</zoomfactor>
     </plugin_config>
-    <width>1873</width>
+    <width>1111</width>
     <z>3</z>
     <height>166</height>
     <location_x>1</location_x>
@@ -155,7 +155,7 @@ make udp-sink.z1 TARGET=z1</commands>
       <analyzers name="6lowpan" />
     </plugin_config>
     <width>692</width>
-    <z>4</z>
+    <z>6</z>
     <height>718</height>
     <location_x>1119</location_x>
     <location_y>315</location_y>
@@ -163,15 +163,28 @@ make udp-sink.z1 TARGET=z1</commands>
   <plugin>
     org.contikios.cooja.plugins.LogListener
     <plugin_config>
-      <filter>ID:1 _r_</filter>
+      <filter>:1 _on</filter>
       <formatted_time />
       <coloring />
     </plugin_config>
-    <width>557</width>
+    <width>656</width>
     <z>2</z>
-    <height>630</height>
+    <height>595</height>
     <location_x>496</location_x>
-    <location_y>345</location_y>
+    <location_y>425</location_y>
+  </plugin>
+  <plugin>
+    org.contikios.cooja.plugins.LogListener
+    <plugin_config>
+      <filter>_wait</filter>
+      <formatted_time />
+      <coloring />
+    </plugin_config>
+    <width>673</width>
+    <z>4</z>
+    <height>791</height>
+    <location_x>1200</location_x>
+    <location_y>160</location_y>
   </plugin>
 </simconf>
 
