@@ -18,6 +18,7 @@ int check_if_neighbor_exist(list_t Neighbors,linkaddr_t addr)
 	}
 	return 0;
 }
+
 neighbor_state get_neighbor_state (list_t  Neighbors,linkaddr_t addr)
 {
 	neighbor_state * s;

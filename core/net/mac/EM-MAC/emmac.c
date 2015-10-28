@@ -68,7 +68,7 @@
 
 static struct pt pt;
 static struct rtimer reciever_powercycle_timer;
-static struct ctimer delay_tx_timer;
+static struct ctimer delay_tx_timer[4];
 static struct timer w;
 static unsigned int initial_rand_seed;
 static unsigned int initial_rand_seed_temp;
@@ -104,6 +104,7 @@ static unsigned int failed_DEF=0;
 static unsigned int failed_ERR=0;
 static unsigned int successful_after_try_again=0;
 static unsigned int failed_try_again=0;
+static int pkts_rxed_w_tx;
 
 /* Every neighbor has its own packet queue */
 struct neighbor_queue {
@@ -114,6 +115,12 @@ struct neighbor_queue {
 	uint8_t collisions, deferrals;
 	LIST_STRUCT(queued_packet_list);
 };
+struct send_arg {
+	mac_callback_t sent;
+	void *ptr;
+	struct rdc_buf_list *buf_list;
+};
+static struct send_arg delay_arg[4];
 
 #define MEMB_SIZE 4
 MEMB(neighbor_memb, neighbor_state, MEMB_SIZE);
@@ -129,11 +136,13 @@ static char	reception_powercycle(void);
 static int 	send_one_packet		(mac_callback_t sent, void *ptr, linkaddr_t receiver, int result);
 static int 	send_packet			(mac_callback_t sent, void *ptr, linkaddr_t receiver, struct rdc_buf_list *buf_list);
 static int	process_packet		(mac_callback_t sent, void *ptr, struct rdc_buf_list *buf_list);
+static void	delay_packet		(void);
 static void	send_list			(mac_callback_t sent, void *ptr, struct rdc_buf_list *buf_list);
 static void	packet_input		(void);
 static int	resync_neighbor		(mac_callback_t sent, linkaddr_t receiver, void *ptr, struct rdc_buf_list *buf_list);
 static unsigned short channel_check_interval(void);
 static void	init				(void);
+
 
 
 /*---------------------------------------------------------------------------*/
@@ -416,6 +425,7 @@ static char reception_powercycle(void)
 			}else {
 				offset=0;
 			}
+			pkts_rxed_w_tx=0;
 			while((RTIMER_NOW()+offset) < (wt4powercycle + time_to_wait_awake + offset) && !neighbor_discovery_flag && transmitting==0){
 				// Check if a packet was received
 				if (NETSTACK_RADIO.pending_packet() || incoming_packet==1 ){
@@ -941,29 +951,29 @@ qsend_packet(mac_callback_t sent_callback, void *ptr){
 	return process_packet(sent_callback, ptr, q);
 }
 /*---------------------------------------------------------------------------*/
-struct send_arg {
-	mac_callback_t sent;
-	void *ptr;
-	struct rdc_buf_list *buf_list;
-};
-static struct send_arg test;
-static void test_clock_time(void){
-	//printf("s_lis_called\n");
-	send_list(test.sent, test.ptr, test.buf_list);
-	//printf("af:%u %u %u\n", test.buf_list, test.ptr, test.sent);
+static void delay_packet(void){
+	int i=0;
+	while (i<pkts_rxed_w_tx){
+		printf("Txcall_%d\n", i);
+		send_list(delay_arg[i].sent, delay_arg[i].ptr, delay_arg[i].buf_list);
+		i++;
+	}
 }
 /*---------------------------------------------------------------------------*/
 static void
 send_list(mac_callback_t sent, void *ptr, struct rdc_buf_list *buf_list)
 {
-	//printf("s_lis_exec\n");
 	if(receiving){
-		printf("Tx_Rx\n");
-		test.buf_list=buf_list;
-		test.ptr=ptr;
-		test.sent=sent;
-		//printf("bf:%u %u %u\n", buf_list, ptr, sent);
-		ctimer_set(&delay_tx_timer, 5, (void (*))test_clock_time, NULL);
+		delay_arg[pkts_rxed_w_tx].buf_list=buf_list;
+		delay_arg[pkts_rxed_w_tx].ptr=ptr;
+		delay_arg[pkts_rxed_w_tx].sent=sent;
+		if (pkts_rxed_w_tx==0){
+			ctimer_set(&delay_tx_timer[pkts_rxed_w_tx], 5, (void (*))delay_packet, NULL);
+		} else {
+			ctimer_restart(&delay_tx_timer);
+		}
+		pkts_rxed_w_tx++;
+		printf("Tx_Rx_%d\n", pkts_rxed_w_tx);
 		return;
 	}
 	if (buf_list == NULL){
@@ -1054,6 +1064,7 @@ packet_input(void)
 					ackdata[0] = FRAME802154_ACKFRAME;
 					ackdata[1] = 0;
 					ackdata[2] = recieved_frame.seq;
+					while (!NETSTACK_RADIO.channel_clear()){}
 					NETSTACK_RADIO.send(ackdata, ack_len);
 				}
 
