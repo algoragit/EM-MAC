@@ -611,7 +611,7 @@ static void
 start_tdma(void *ptr)
 {
 	PRINTF("muchmac: starting TDMA mode\n");
-	rtimer_set(&rt, /*timesynch_time_to_rtimer(0)*/0, 0, (rtimer_callback_t)powercycle, NULL);
+	rtimer_set(&rt, 0, 0, (rtimer_callback_t)powercycle, NULL);
 }
 
 static void

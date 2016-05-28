@@ -61,14 +61,14 @@
 #define PRINTF(...)
 #endif
 
-#define ACK_WAIT_TIME                      RTIMER_SECOND / 70/*Podria ser hasta RTIMER/900, para valores mayores que 900 el tx no recibe el ACK*/
+#define ACK_WAIT_TIME                      RTIMER_SECOND / 70
 #define AFTER_ACK_DETECTED_WAIT_TIME       RTIMER_SECOND / 250
 #define DATA_PACKET_WAIT_TIME               RTIMER_SECOND / 500
 //Values of the reception state
 
 static struct pt pt;
 static struct rtimer reciever_powercycle_timer;
-static struct ctimer delay_tx_timer[4];
+static struct ctimer delay_tx_timer;
 static struct timer w;
 static unsigned int initial_rand_seed;
 static unsigned int initial_rand_seed_temp;
@@ -92,7 +92,7 @@ static int offset;
 static int sent_times=0;
 static int incoming_packet=0;
 unsigned int iteration_out[6]={0};
-unsigned int time_in_advance=655;
+unsigned int time_in_advance=RTIMER_SECOND/50;
 static unsigned int succ_beacon=0;
 static unsigned int successful=0;
 static unsigned int failed=0;
@@ -134,7 +134,7 @@ static unsigned int get_w_up_advance(unsigned short failed_tx);
 static void	neighbor_discovery	(void);
 static char	reception_powercycle(void);
 static int 	send_one_packet		(mac_callback_t sent, void *ptr, linkaddr_t receiver, int result);
-static int 	send_packet			(mac_callback_t sent, void *ptr, linkaddr_t receiver, struct rdc_buf_list *buf_list);
+static int 	qsend_packet			(mac_callback_t sent, void *ptr);//, linkaddr_t receiver, struct rdc_buf_list *buf_list);
 static int	process_packet		(mac_callback_t sent, void *ptr, struct rdc_buf_list *buf_list);
 static void	delay_packet		(void);
 static void	send_list			(mac_callback_t sent, void *ptr, struct rdc_buf_list *buf_list);
@@ -180,11 +180,11 @@ on(void)
 static unsigned int get_w_up_advance(unsigned short failed_tx)
 {
 	unsigned short i;
-	unsigned int temp=655;
+	unsigned int temp=RTIMER_SECOND/50;
 	if(failed_tx==0 || failed_tx==1){
-		return 655;}
+		return RTIMER_SECOND/50;}
 	if(failed_tx>=6){
-		return 24000;
+		return (RTIMER_SECOND/136)*100;
 	}
 
 	for(i=2;i<=failed_tx;i++){
@@ -310,11 +310,11 @@ static void neighbor_discovery(void)
 							n->wake_time_seconds=t_sec;
 							n->last_seed=last_generated;
 							n->last_channel=last_ch;
-							n->n=(int)((int)(local_time_tics)-(int)(t_tic));
-							n->m=(int)((long int)(local_time_seconds)-(long int)(c_t_sec));
+							n->d_tics=(int)((int)(local_time_tics)-(int)(t_tic));
+							n->d_secs=(int)((long int)(local_time_seconds)-(long int)(c_t_sec));
 							n->consecutive_failed_tx=0;
 							printf("w_t:%u w_s:%u l_t:%u t_t:%u d_t:%d l_s:%u t_s:%u d_s:%d\n",
-									n->wake_time_tics, n->wake_time_seconds, local_time_tics, t_tic, n->n, local_time_seconds, c_t_sec, n->m);
+									n->wake_time_tics, n->wake_time_seconds, local_time_tics, t_tic, n->d_tics, local_time_seconds, c_t_sec, n->d_secs);
 							break;
 						}
 					}
@@ -329,12 +329,12 @@ static void neighbor_discovery(void)
 						n->wake_time_seconds=t_sec;
 						n->last_seed=last_generated;
 						n->last_channel=last_ch;
-						n->n=(int)((int)(local_time_tics)-(int)(t_tic));
-						n->m=(int)((long int)(local_time_seconds)-(long int)(c_t_sec));
+						n->d_tics=(int)((int)(local_time_tics)-(int)(t_tic));
+						n->d_secs=(int)((long int)(local_time_seconds)-(long int)(c_t_sec));
 						n->consecutive_failed_tx=0;
 						list_add(Neighbors, n);
 						printf("w_t:%u w_s:%u l_t:%u t_t:%u d_t:%d l_s:%u t_s:%u d_s:%d\n",
-								n->wake_time_tics, n->wake_time_seconds, local_time_tics, t_tic, n->n, local_time_seconds, c_t_sec, n->m);
+								n->wake_time_tics, n->wake_time_seconds, local_time_tics, t_tic, n->d_tics, local_time_seconds, c_t_sec, n->d_secs);
 					}
 				}
 			}
@@ -350,7 +350,7 @@ static void neighbor_discovery(void)
 	printf("Neighbor List after Neighbor Discovery: \n");
 	while(test != NULL) {
 		printf("%d. wake_time_tics: %u, m: %d last_seed: %u, wake_time_seconds: %u, n: %d\n",
-				test->node_link_addr.u8[7], test->wake_time_tics, test->m, test->last_seed, test->wake_time_seconds, test->n);
+				test->node_link_addr.u8[7], test->wake_time_tics, test->d_secs, test->last_seed, test->wake_time_seconds, test->d_tics);
 		test = list_item_next(test);
 	}
 	/************ end of neighbor list printing **********************************************************/
@@ -416,12 +416,12 @@ static char reception_powercycle(void)
 			// The time spent awake is the maximum time required for a node to send a data packet from the moment it receives the beacon
 			receiving=1;
 			wt4powercycle = RTIMER_NOW();
-			time_to_wait_awake=300;
-			/* This IF prevents the node to go back to sleep if RTIMER_NOW() is greater than (2^16-400) because,
+			time_to_wait_awake=RTIMER_SECOND/100;
+			/* This IF prevents the node to go back to sleep if RTIMER_NOW() is greater than (2^16-RTIMER_SECOND/82) because,
 			 * in that case, (RTIMER_NOW() > (wt4powercycle + time_to_wait_awake)); and the node goes to sleep earlier than it should.
 			 */
-			if ((wt4powercycle+time_to_wait_awake) <= 400){
-				offset=400;
+			if ((wt4powercycle+time_to_wait_awake) <= RTIMER_SECOND/82){
+				offset=RTIMER_SECOND/82;
 			}else {
 				offset=0;
 			}
@@ -429,11 +429,11 @@ static char reception_powercycle(void)
 			while((RTIMER_NOW()+offset) < (wt4powercycle + time_to_wait_awake + offset) && !neighbor_discovery_flag && transmitting==0){
 				// Check if a packet was received
 				if (NETSTACK_RADIO.pending_packet() || incoming_packet==1 ){
-					rtimer_set(&reciever_powercycle_timer,RTIMER_NOW()+ 150, 0,(void (*)(struct rtimer *, void *))reception_powercycle,NULL);
-					time_to_wait_awake=400 + ((RTIMER_NOW()-wt4powercycle));
+					rtimer_set(&reciever_powercycle_timer,RTIMER_NOW()+ RTIMER_SECOND/218, 0,(void (*)(struct rtimer *, void *))reception_powercycle,NULL);
+					time_to_wait_awake=RTIMER_SECOND/82 + ((RTIMER_NOW()-wt4powercycle));
 					PT_YIELD(&pt);
-					if ((wt4powercycle+time_to_wait_awake) <= 400){
-						offset=400;
+					if ((wt4powercycle+time_to_wait_awake) <= RTIMER_SECOND/82){
+						offset=RTIMER_SECOND/82;
 					}else {
 						offset=0;
 					}
@@ -458,7 +458,7 @@ static char reception_powercycle(void)
 					successful, failed, failed_COL, fail_ACK, failed_DEF, failed_ERR, failed_try_again, successful_after_try_again);*/
 		}
 		receiving=0;
-		rtimer_set(&reciever_powercycle_timer,RTIMER_NOW()+ 5, 0,(void (*)(struct rtimer *, void *))reception_powercycle,NULL);
+		rtimer_set(&reciever_powercycle_timer,RTIMER_NOW()+ RTIMER_SECOND/10000, 0,(void (*)(struct rtimer *, void *))reception_powercycle,NULL);
 		PT_YIELD(&pt);
 	}
 	PT_END(&pt);
@@ -486,7 +486,7 @@ send_one_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver, int result)
 	wt = RTIMER_NOW();
 	int wait_for_neighbor=2*time_in_advance;
 	if (result==3){
-		wait_for_neighbor=400;  //If the nodes did rendezvous nut there was a collision, then we wait a shorter time for the ACK
+		wait_for_neighbor=RTIMER_SECOND/82;  //If the nodes did rendezvous nut there was a collision, then we wait a shorter time for the ACK
 	}
 	while(RTIMER_CLOCK_LT(RTIMER_NOW(), wt + wait_for_neighbor) && beacon_received==0) {  //It should be "wt + Time_from_Chasing_algorithm but for now we just use 40ms (remember in Cooja the time is twice the real time)
 		if(NETSTACK_RADIO.pending_packet()) {
@@ -529,8 +529,8 @@ send_one_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver, int result)
 					n->blacklist=NULL;
 					n->last_channel=NULL;
 					n->last_seed=NULL;
-					n->m=NULL;
-					n->n=NULL;
+					n->d_secs=NULL;
+					n->d_tics=NULL;
 					n->wake_time_seconds=NULL;
 					n->wake_time_tics=NULL;
 					printf("_r_fail:delete\n");
@@ -572,8 +572,7 @@ send_one_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver, int result)
 		/* Backoff based on the node ID:
 		 * RTIMER_SECOND/400: is the time required to transmit a message.*/
 		wt=RTIMER_NOW();
-		time_to_send = (unsigned int)(random_rand()%(unsigned int)(50)); // 77 tics is the time required to transmit a maximum length frame
-		// The backoff time is divided by the number of failed attempts in order to give better chances to the nodes that have failed previous attempts
+		time_to_send = (unsigned int)(random_rand()%(unsigned int)(RTIMER_SECOND/425)); // 77 tics is the time required to transmit a maximum length frame
 		printf("%u\n",time_to_send);
 		while(RTIMER_NOW() < wt+time_to_send){}
 	}
@@ -644,8 +643,8 @@ send_one_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver, int result)
 												n->wake_time_seconds=t_sec;
 												n->last_seed=last_generated;
 												n->last_channel=last_ch;
-												n->n=(int)((int)(local_time_tics)-(int)(t_tic));
-												n->m=(int)((long int)(local_time_seconds)-(long int)(c_t_sec));
+												n->d_tics=(int)((int)(local_time_tics)-(int)(t_tic));
+												n->d_secs=(int)((long int)(local_time_seconds)-(long int)(c_t_sec));
 												n->consecutive_failed_tx=0;
 												/*printf("w_t:%u w_s:%u l_t:%u t_t:%u d_t:%d l_s:%u t_s:%u d_s:%d\n",
 														n->wake_time_tics, n->wake_time_seconds, local_time_tics, t_tic, n->n, local_time_seconds, c_t_sec, n->m);*/
@@ -667,8 +666,8 @@ send_one_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver, int result)
 											n->wake_time_seconds=t_sec;
 											n->last_seed=last_generated;
 											n->last_channel=last_ch;
-											n->n=(int)((int)(local_time_tics)-(int)(t_tic));
-											n->m=(int)((long int)(local_time_seconds)-(long int)(c_t_sec));
+											n->d_tics=(int)((int)(local_time_tics)-(int)(t_tic));
+											n->d_secs=(int)((long int)(local_time_seconds)-(long int)(c_t_sec));
 											n->consecutive_failed_tx=0;
 											list_add(Neighbors, n);
 											/*printf("w_t:%u w_s:%u l_t:%u t_t:%u d_t:%d l_s:%u t_s:%u d_s:%d\n",
@@ -810,8 +809,8 @@ resync_neighbor(mac_callback_t sent, linkaddr_t receiver, void *ptr, struct rdc_
 															n->wake_time_seconds=t_sec;
 															n->last_seed=last_generated;
 															n->last_channel=last_ch;
-															n->n=(int)((int)(local_time_tics)-(int)(t_tic));
-															n->m=(int)((long int)(local_time_seconds)-(long int)(c_t_sec));
+															n->d_tics=(int)((int)(local_time_tics)-(int)(t_tic));
+															n->d_secs=(int)((long int)(local_time_seconds)-(long int)(c_t_sec));
 															n->consecutive_failed_tx=0;
 															PRINTF("syncNeigh updated %d\n");
 															break;
@@ -832,8 +831,8 @@ resync_neighbor(mac_callback_t sent, linkaddr_t receiver, void *ptr, struct rdc_
 														n->wake_time_seconds=t_sec;
 														n->last_seed=last_generated;
 														n->last_channel=last_ch;
-														n->n=(int)((int)(local_time_tics)-(int)(t_tic));
-														n->m=(int)((long int)(local_time_seconds)-(long int)(c_t_sec));
+														n->d_tics=(int)((int)(local_time_tics)-(int)(t_tic));
+														n->d_secs=(int)((long int)(local_time_seconds)-(long int)(c_t_sec));
 														n->consecutive_failed_tx=0;
 														list_add(Neighbors, n);
 													}
@@ -857,7 +856,6 @@ resync_neighbor(mac_callback_t sent, linkaddr_t receiver, void *ptr, struct rdc_
 							break;
 						}
 					}
-
 				}
 			}
 		}
@@ -874,7 +872,7 @@ send_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver, struct rdc_buf_
 {
 	uint8_t neighbor_channel;
 	uint8_t done=0;
-	time_in_advance=655;
+	time_in_advance=RTIMER_SECOND/50;
 	unsigned int neighbor_wake;
 	neighbor_state receiver_state;
 	receiver_state=get_neighbor_state(Neighbors, receiver);
@@ -895,13 +893,13 @@ send_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver, struct rdc_buf_
 	iteration_out[5]=0;
 	neighbor_wake = get_neighbor_wake_up_time(get_neighbor_state(Neighbors, receiver), &neighbor_channel, time_in_advance, &iteration_out);
 
-	if (neighbor_wake > (unsigned int)(reciever_powercycle_timer.time)-100 &&
-			neighbor_wake < (unsigned int)(reciever_powercycle_timer.time)+100){
-		neighbor_wake+=50;
+	if (neighbor_wake > (unsigned int)(reciever_powercycle_timer.time)-RTIMER_SECOND/327 &&
+			neighbor_wake < (unsigned int)(reciever_powercycle_timer.time)+RTIMER_SECOND/327){
+		neighbor_wake+=RTIMER_SECOND/654;
 	}
 	while(neighbor_wake - (unsigned int)(RTIMER_NOW()) > 2){
 		if ((unsigned int)(RTIMER_NOW())>neighbor_wake &&
-				(unsigned int)(RTIMER_NOW())-neighbor_wake < 100){
+				(unsigned int)(RTIMER_NOW())-neighbor_wake < RTIMER_SECOND/327){
 			break;
 		}
 	}
@@ -968,16 +966,13 @@ send_list(mac_callback_t sent, void *ptr, struct rdc_buf_list *buf_list)
 		delay_arg[pkts_rxed_w_tx].ptr=ptr;
 		delay_arg[pkts_rxed_w_tx].sent=sent;
 		if (pkts_rxed_w_tx==0){
-			ctimer_set(&delay_tx_timer[pkts_rxed_w_tx], 5, (void (*))delay_packet, NULL);
+			ctimer_set(&delay_tx_timer, 5, (void (*))delay_packet, NULL);
 		} else {
 			ctimer_restart(&delay_tx_timer);
 		}
 		pkts_rxed_w_tx++;
 		printf("Tx_Rx_%d\n", pkts_rxed_w_tx);
 		return;
-	}
-	if (buf_list == NULL){
-		printf("not wking!\n");
 	}
 	while(buf_list != NULL) {
 		transmitting = 1;

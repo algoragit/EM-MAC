@@ -46,7 +46,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include "../rpl-collect_muchmac/collect-common.h"
+#include "collect-common.h"
 #include "collect-view.h"
 
 #define DEBUG DEBUG_PRINT
@@ -173,6 +173,7 @@ PROCESS_THREAD(udp_server_process, ev, data)
   PRINT6ADDR(&server_conn->ripaddr);
   PRINTF(" local/remote port %u/%u\n", UIP_HTONS(server_conn->lport),
          UIP_HTONS(server_conn->rport));
+
 
   while(1) {
     PROCESS_YIELD();

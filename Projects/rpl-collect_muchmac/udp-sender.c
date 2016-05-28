@@ -38,7 +38,7 @@
 #else
 #include "dev/uart1.h"
 #endif
-#include "../rpl-collect_muchmac/collect-common.h"
+#include "collect-common.h"
 #include "collect-view.h"
 
 #include <stdio.h>
@@ -226,6 +226,7 @@ PROCESS_THREAD(udp_client_process, ev, data)
         UIP_HTONS(client_conn->lport), UIP_HTONS(client_conn->rport));
 
   while(1) {
+
     PROCESS_YIELD();
     if(ev == tcpip_event) {
       tcpip_handler();

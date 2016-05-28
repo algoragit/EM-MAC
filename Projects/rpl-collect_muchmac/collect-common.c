@@ -35,13 +35,13 @@
  *         Adam Dunkels <adam@sics.se>
  */
 
-#include "../rpl-collect_muchmac/collect-common.h"
-
 #include "contiki.h"
 #include "lib/random.h"
 #include "net/netstack.h"
 #include "dev/serial-line.h"
 #include "dev/leds.h"
+#include "collect-common.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>

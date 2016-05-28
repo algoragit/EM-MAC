@@ -21,8 +21,8 @@ unsigned int get_neighbor_wake_up_time(neighbor_state v, uint8_t *neighbor_chann
 	unsigned int next_wake_tics = v.wake_time_tics;
 	uint8_t last_channel = v.last_channel;
 	uint8_t channel_list_index=0;
-	int diff_secs = v.m;
-	int diff_tics = v.n;
+	int diff_secs = v.d_secs;
+	int diff_tics = v.d_tics;
 	int delta;
 	int done=0;
 
@@ -52,7 +52,7 @@ unsigned int get_neighbor_wake_up_time(neighbor_state v, uint8_t *neighbor_chann
 		iteration++;
 		seed_temp=current_seed;
 		current_seed=((15213*current_seed)+11237);
-		next_wake_tics_temp = 3 + current_seed%RTIMER_SECOND + RTIMER_SECOND/2;
+		next_wake_tics_temp = RTIMER_SECOND/10000 + current_seed%RTIMER_SECOND + RTIMER_SECOND/2;
 		next_wake_secs += next_wake_tics_temp/RTIMER_SECOND + (next_wake_tics_temp%RTIMER_SECOND+next_wake_tics%RTIMER_SECOND)/RTIMER_SECOND;
 		next_wake_tics += next_wake_tics_temp;
 		channel_list_index=(channel_list_index+1)%16;
@@ -66,5 +66,5 @@ unsigned int get_neighbor_wake_up_time(neighbor_state v, uint8_t *neighbor_chann
 	iteration_out[5]=diff_secs;
 	//printf("_wait_bef:n_sec:%u n_tic:%u diff_s:%d diff_t:%d now:%u\n",
 			//next_wake_secs, next_wake_tics, diff_secs, diff_tics, RTIMER_NOW());
-	return next_wake_tics - 45;
+	return next_wake_tics - RTIMER_SECOND/728;
 }
