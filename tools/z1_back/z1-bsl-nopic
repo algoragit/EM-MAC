@@ -234,6 +234,7 @@ class LowLevel:
     BSL_ERASE               = 0x16 #Erase one segment
     BSL_MERAS               = 0x18 #Erase complete FLASH memory
     BSL_CHANGEBAUD          = 0x20 #Change baudrate
+    BSL_SETMEMOFFSET        = 0x21 #Set memory offset
     BSL_LOADPC              = 0x1A #Load PC and start execution
     BSL_TXVERSION           = 0x1E #Get BSL version
 
@@ -806,6 +807,7 @@ class Memory:
         segmentdata = []
         currentAddr = 0
         startAddr   = 0
+        offsetAddr  = 0
         lines = file.readlines()
         for l in lines:
             if l[0] != ':': raise BSLException("File Format Error\n")
@@ -815,20 +817,31 @@ class Memory:
             type    = int(l[7:9],16)
             check   = int(l[-2:],16)
             if type == 0x00:
-                if currentAddr != address:
+                if currentAddr != offsetAddr + address:
                     if segmentdata:
                         self.segments.append( Segment(startAddr, string.join(segmentdata,'')) )
-                    startAddr = currentAddr = address
+                    startAddr = currentAddr = offsetAddr + address
                     segmentdata = []
                 for i in range(length):
                     segmentdata.append( chr(int(l[9+2*i:11+2*i],16)) )
                 currentAddr = length + currentAddr
-            elif type in (0x01, 0x02, 0x03, 0x04, 0x05):
+            elif type == 0x02:
+                if segmentdata:
+                    self.segments.append( Segment(startAddr, string.join(segmentdata,'')) )
+                offsetAddr = int(l[9:13],16)*16
+                startAddr = currentAddr = offsetAddr
+                segmentdata = []
+            elif type in (0x01, 0x03, 0x04, 0x05):
                 pass
             else:
                 sys.stderr.write("Ignored unknown field (type 0x%02x) in ihex file.\n" % type)
         if segmentdata:
             self.segments.append( Segment(startAddr, string.join(segmentdata,'')) )
+
+        if DEBUG:
+            sys.stderr.write("loadIHex\n")
+            for segment in self.segments:
+                sys.stderr.write("  Segment(startadress = 0x%04x, len = %i)\n" % (segment.startaddress, len(segment)))
 
     def loadTIText(self, file):
         """load data from a (opened) file in TI-Text format"""
@@ -1012,6 +1025,11 @@ class BootStrapLoader(LowLevel):
         if DEBUG > 1: sys.stderr.write("* programData()\n")
         for seg in segments:
             currentAddr = seg.startaddress
+            offsetAddr = 0
+            if (seg.startaddress > 0xFFFF):
+                offsetAddr = seg.startaddress >> 16
+                self.bslTxRx(self.BSL_SETMEMOFFSET, 0, offsetAddr)
+                currentAddr = currentAddr - (offsetAddr << 16)
             pstart = 0
             while pstart<len(seg.data):
                 length = self.MAXDATA
@@ -1087,10 +1105,6 @@ class BootStrapLoader(LowLevel):
         #self.programBlk(0x10E0, "7E270B790DAA7E4D06DF083308FEFFFF", self.ACTION_PROGRAM)
         #self.programBlk(0x10F0, "FFFFFFFFFFFF08018F958E9A8D8886D1", self.ACTION_PROGRAM)
 
-    def actionSecureInfoSegment(self):
-        print 'securing info segment'
-        self.programBlk(0xFFBE, "0000", self.ACTION_PROGRAM)
-        print 'info segment secured'
 
     #-----------------------------------------------------------------
 
@@ -1350,9 +1364,8 @@ class BootStrapLoader(LowLevel):
         sys.stderr.flush()
         self.bslTxRx(self.BSL_CHANGEBAUD,   #Command: change baudrate
                     a, l)                   #args are coded in adr and len
-        self.serialport.flush()
         time.sleep(0.010)                   #recomended delay
-        self.serialport.baudrate = baudrate
+        self.serialport.setBaudrate(baudrate)
 
     def actionReadBSLVersion(self):
         """informational output of BSL version number.
@@ -1644,12 +1657,11 @@ def main(itest=1):
             sys.stderr.write( "Number of mass erase cycles set to %i.\n" % meraseCycles)
             bsl.meraseCycles = meraseCycles
         elif o in ("-e", "--masserase"):
-            #toinit.append(bsl.actionMassErase)        #Erase Flash
-            todo.append(bsl.actionMainErase)        #Erase Flash
-            #todo.append(bsl.actionSecureInfoSegment)
-        elif o in ("-n", "--mainerase"):
-            #todo.append(bsl.actionMainErase)        #Erase Flash
             toinit.append(bsl.actionMassErase)        #Erase Flash
+            #todo.append(bsl.actionMainErase)        #Erase Flash
+        elif o in ("-n", "--mainerase"):
+            todo.append(bsl.actionMainErase)        #Erase Flash
+            #toinit.append(bsl.actionMassErase)        #Erase Flash
         elif o in ("-E", "--erasecheck"):
             toinit.append(bsl.actionEraseCheck)       #Erase Check (by file)
         elif o in ("-p", "--program"):
@@ -1660,8 +1672,7 @@ def main(itest=1):
                 #todo.append(bsl.writeCalibTables)
                 #todo.append(bsl.writeCalibTables2)
                 
-                todo.append(bsl.actionWriteNewPassword)
-                
+                #todo.append(bsl.actionWriteNewPassword)
                 pass
         elif o in ("--fromweb"):
             toinit.append(bsl.actionMassErase)        #Erase Flash
@@ -1766,7 +1777,7 @@ def main(itest=1):
         elif o in ("--z1", ):
             bsl.z1 = 1
             speed = 38400
-            toinit.append(bsl.actionRecoverPassword)
+            #toinit.append(bsl.actionRecoverPassword)
         elif o in ("--no-BSL-download", ):
             mayuseBSL = 0
         elif o in ("--force-BSL-download", ):

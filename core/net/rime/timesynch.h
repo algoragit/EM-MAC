@@ -1,30 +1,3 @@
-/**
- * \addtogroup sys
- * @{
- */
-
-/**
- * \defgroup timesynch Implicit network time synchronization
- * @{
- *
- * This crude and simple network time synchronization module
- * synchronizes clocks of all nodes in a network. The time
- * synchronization is implicit in that no explicit time
- * synchronization messages are sent: the module relies on the
- * underlying network device driver to timestamp all radio messages,
- * both outgoing and incoming. The code currently only works on the
- * Tmote Sky platform and the cc2420 driver.
- *
- * Every node has an authority level, which is included in every
- * outgoing packet. If a message is received from a node with higher
- * authority (lower authority number), the node adjusts its clock
- * towards the clock of the sending node.
- *
- * The timesynch module is implemented as a meta-MAC protocol, so that
- * the module is invoked for every incoming packet.
- *
- */
-
 /*
  * Copyright (c) 2007, Swedish Institute of Computer Science.
  * All rights reserved.
@@ -55,7 +28,6 @@
  *
  * This file is part of the Contiki operating system.
  *
- * $Id: timesynch.h,v 1.4 2008/07/01 21:02:51 adamdunkels Exp $
  */
 
 /**
@@ -65,8 +37,35 @@
  *         Adam Dunkels <adam@sics.se>
  */
 
-#ifndef __TIMESYNCH_H__
-#define __TIMESYNCH_H__
+/**
+ * \addtogroup sys
+ * @{
+ */
+
+/**
+ * \defgroup timesynch Implicit network time synchronization
+ * @{
+ *
+ * This crude and simple network time synchronization module
+ * synchronizes clocks of all nodes in a network. The time
+ * synchronization is implicit in that no explicit time
+ * synchronization messages are sent: the module relies on the
+ * underlying network device driver to timestamp all radio messages,
+ * both outgoing and incoming. The code currently only works on the
+ * Tmote Sky platform and the cc2420 driver.
+ *
+ * Every node has an authority level, which is included in every
+ * outgoing packet. If a message is received from a node with higher
+ * authority (lower authority number), the node adjusts its clock
+ * towards the clock of the sending node.
+ *
+ * The timesynch module is implemented as a meta-MAC protocol, so that
+ * the module is invoked for every incoming packet.
+ *
+ */
+
+#ifndef TIMESYNCH_H_
+#define TIMESYNCH_H_
 
 #include "net/mac/mac.h"
 #include "sys/rtimer.h"
@@ -145,29 +144,7 @@ int timesynch_authority_level(void);
  */
 void timesynch_set_authority_level(int level);
 
-/**
- * \brief				Adjust clock on timestamps of incoming packet
- *
- *  						This function adjusts the timesynch internal offset using timestamps
- *  						on the last incoming packet. This method is automatically called
- *  						through	a Rime sniffer so most applications shouldn't need it.
- */
-
-void timesynch_incoming_packet(void);
-
-/**
- * \brief				Estimate drift since last synchronization
- * \param who   zero for drift of own clock against reference,
- * 							non-zero for drift against non-reference clock
- *
- * 							Estimates the maximum clock drift against clocks with
- *              this authority +/- 1. This implementation assumes +/- 40ppm
- *              clock drift as defined by the 802.15.4 PHY/MAC specification.
- */
-
-rtimer_clock_t timesynch_drift(int who);
-
-#endif /* __TIMESYNCH_H__ */
+#endif /* TIMESYNCH_H_ */
 
 /** @} */
 /** @} */

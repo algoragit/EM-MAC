@@ -122,7 +122,7 @@ struct send_arg {
 };
 static struct send_arg delay_arg[4];
 
-#define MEMB_SIZE 4
+#define MEMB_SIZE 8    // Limits the number of neighbors
 MEMB(neighbor_memb, neighbor_state, MEMB_SIZE);
 LIST(Neighbors);
 
@@ -247,7 +247,9 @@ static void neighbor_discovery(void)
 						n = memb_alloc(&neighbor_memb);
 						if(n == NULL) {
 							/* We could not allocate memory for this encounter, so we just drop it. */
-							return;
+							neighbor_discovery_flag=0;
+							memb_free(&neighbor_memb, &n);
+							break;
 						}
 						linkaddr_copy(&n->node_link_addr, &addr);
 						list_add(Neighbors, n);
@@ -349,8 +351,8 @@ static void neighbor_discovery(void)
 	neighbor_state *test=list_head(Neighbors);
 	printf("Neighbor List after Neighbor Discovery: \n");
 	while(test != NULL) {
-		//printf("%d. wake_time_tics: %u, m: %d last_seed: %u, wake_time_seconds: %u, n: %d\n",
-		//		test->node_link_addr.u8[7], test->wake_time_tics, test->d_secs, test->last_seed, test->wake_time_seconds, test->d_tics);
+		printf("%d. wake_time_tics: %u, m: %d last_seed: %u, wake_time_seconds: %u, n: %d\n",
+				test->node_link_addr.u8[7], test->wake_time_tics, test->d_secs, test->last_seed, test->wake_time_seconds, test->d_tics);
 		test = list_item_next(test);
 	}
 	/************ end of neighbor list printing **********************************************************/

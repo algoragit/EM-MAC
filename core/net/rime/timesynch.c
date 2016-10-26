@@ -1,9 +1,3 @@
-/**
- * \addtogroup timesynch
- * @{
- */
-
-
 /*
  * Copyright (c) 2007, Swedish Institute of Computer Science.
  * All rights reserved.
@@ -34,7 +28,6 @@
  *
  * This file is part of the Contiki operating system.
  *
- * $Id: timesynch.c,v 1.9 2009/12/09 18:08:26 adamdunkels Exp $
  */
 
 /**
@@ -42,24 +35,55 @@
  *         A simple time synchronization mechanism
  * \author
  *         Adam Dunkels <adam@sics.se>
- *         Joris Borms  <jborms@etro.vub.ac.be> added drift estimation
  */
 
-#include "net/rime/timesynch.h"
-#include "net/packetbuf.h"
+/**
+ * \addtogroup timesynch
+ * @{
+ */
+
+#include "contiki.h"
+#include "lib/random.h"
 #include "net/rime/rime.h"
-#include "dev/cc2420/cc2420.h"
+#include "net/rime/timesynch.h"
+#include <string.h>
 
-#define abs(a) (((signed int)a) < 0 ? -(a) : (a))
-
-//#if TIMESYNCH_CONF_ENABLED
+#if TIMESYNCH_CONF_ENABLED
 static int authority_level;
 static rtimer_clock_t offset;
-static unsigned long last_correction;
 
-static short authority_timeouts;
-static struct ctimer authority_timer;
-#define AUTHORITY_BASE_TIMEOUT (120 * CLOCK_SECOND)
+#define TIMESYNCH_CHANNEL  7
+
+struct timesynch_msg {
+  uint8_t authority_level;
+  uint8_t dummy;
+  uint16_t authority_offset;
+  uint16_t clock_fine;
+  clock_time_t clock_time;
+  uint32_t seconds;
+  /* We need some padding so that the radio has time to update the
+     timestamp at the end of the packet, after the transmission has
+     started. */
+  uint8_t padding[16];
+
+  /* The timestamp must be the last two bytes. */
+  uint16_t timestamp;
+};
+
+PROCESS(timesynch_process, "Timesynch process");
+
+#define MIN_INTERVAL CLOCK_SECOND * 8
+#define MAX_INTERVAL CLOCK_SECOND * 60 * 5
+
+#define DEBUG 0
+#if DEBUG
+#include <stdio.h>
+#define PRINTF(...) printf(__VA_ARGS__)
+#define PRINTADDR(addr) PRINTF("%d.%d", addr->u8[0], addr->u8[1])
+#else
+#define PRINTF(...)
+#define PRINTADDR(addr)
+#endif
 
 /*---------------------------------------------------------------------------*/
 int
@@ -71,7 +95,18 @@ timesynch_authority_level(void)
 void
 timesynch_set_authority_level(int level)
 {
+  int old_level = authority_level;
+
   authority_level = level;
+
+  if(old_level != authority_level) {
+    PRINTF("timesynch: new authority level %d (old: %d)\n",
+           authority_level, old_level);
+    /* Restart the timesynch process to restart with a low
+       transmission interval. */
+    process_exit(&timesynch_process);
+    process_start(&timesynch_process, NULL);
+  }
 }
 /*---------------------------------------------------------------------------*/
 rtimer_clock_t
@@ -98,96 +133,87 @@ timesynch_offset(void)
   return offset;
 }
 /*---------------------------------------------------------------------------*/
-rtimer_clock_t
-timesynch_drift(int who)
-{
-//#if TIMESYNCH_CONF_ENABLED
-  /*
-   for nodes with authority 0 this is 0 since we consider these a "master clock"
-
-   since rtimer is too fine-grained (resolution of only a few seconds) we need to use
-   clock_seconds() to calculate drifting period and convert to rtimer_clock_t
-
-   drift is +/- 40ppm = 80ppm worst case between two drifting clocks
-   at 80ppm drift * 4096 rtimer ticks / sec => 0.32768 rtimer ticks drift / sec
-    we approximate
-   drift (rtimer) = seconds / 3 = 0.3333 rtimer ticks drift / sec
-
-   if drift can get bigger than maximum rtimer resolution, another method must
-   be used to represent drifting!
-  */
-  if (authority_level == 0 && who == 0){
-    return 0;
-  } else {
-  }
-}
-/*---------------------------------------------------------------------------*/
-static int
+static void
 adjust_offset(rtimer_clock_t authoritative_time, rtimer_clock_t local_time)
 {
-  if (cc2420_authority_level_of_sender < authority_level){
-  /* if the difference is too big, there's a high probability that
-   * "authorative time" is incorrect - for example derived from a corrupted
-   * message - in this case, ignore it. */
-    rtimer_clock_t new_offset = offset + authoritative_time - local_time;
-    rtimer_clock_t diff = new_offset - offset;
-    if (abs(diff) < timesynch_drift(0) || last_correction == 0){
-      offset = new_offset;
-      return 1;
-    }
-  }
-  return 0;
-}
-/*---------------------------------------------------------------------------*/
-void
-timesynch_incoming_packet(void)
-{
-  if(packetbuf_totlen() != 0) {
-    /* We check the authority level of the sender of the incoming
-       packet. If the sending node has a lower authority level than we
-       have, we synchronize to the time of the sending node and set our
-       own authority level to be one more than the sending node. */
-    if(adjust_offset(cc2420_time_of_departure, cc2420_time_of_arrival)) {
-      last_correction = clock_seconds();
-      authority_timeouts = 0;
-      if(cc2420_authority_level_of_sender + 1 != authority_level) {
-        authority_level = cc2420_authority_level_of_sender + 1;
-      }
-    } else if (authority_level == 0){
-      last_correction = clock_seconds();
-    }
-  }
+  PRINTF("timesynch: adjust offset %u (old: %u)\n",
+         authoritative_time - local_time, offset);
+  offset = authoritative_time - local_time;
 }
 /*---------------------------------------------------------------------------*/
 static void
-periodic_authority_increase(void *ptr)
+broadcast_recv(struct broadcast_conn *c, const linkaddr_t *from)
 {
-  /* XXX the authority level should be increased over time except
-     for the sink node (which has authority 0). */
-  if (authority_level){
-    if (authority_timeouts){
-      authority_level++;
-    }
+  PRINTF("timesynch: recv sync msg from ");
+  PRINTADDR(from);
+  PRINTF("\n");
 
-    authority_timeouts++;
-    ctimer_set(&authority_timer, authority_timeouts * AUTHORITY_BASE_TIMEOUT,
-          periodic_authority_increase, NULL);
+  struct timesynch_msg msg;
 
+  memcpy(&msg, packetbuf_dataptr(), sizeof(msg));
+
+  /* We check the authority level of the sender of the incoming
+       packet. If the sending node has a lower authority level than we
+       have, we synchronize to the time of the sending node and set our
+       own authority level to be one more than the sending node. */
+  if(msg.authority_level < authority_level) {
+    adjust_offset(msg.timestamp + msg.authority_offset,
+                  packetbuf_attr(PACKETBUF_ATTR_TIMESTAMP));
+    timesynch_set_authority_level(msg.authority_level + 1);
   }
 }
+static const struct broadcast_callbacks broadcast_call = {broadcast_recv};
+static struct broadcast_conn broadcast;
 /*---------------------------------------------------------------------------*/
-RIME_SNIFFER(sniffer, timesynch_incoming_packet, NULL);
+PROCESS_THREAD(timesynch_process, ev, data)
+{
+  static struct etimer sendtimer, intervaltimer;
+  static clock_time_t interval;
+  struct timesynch_msg msg;
+
+  PROCESS_EXITHANDLER(broadcast_close(&broadcast);)
+
+  PROCESS_BEGIN();
+
+  broadcast_open(&broadcast, TIMESYNCH_CHANNEL, &broadcast_call);
+
+  interval = MIN_INTERVAL;
+
+  while(1) {
+    etimer_set(&intervaltimer, interval);
+    etimer_set(&sendtimer, random_rand() % interval);
+
+    PROCESS_WAIT_UNTIL(etimer_expired(&sendtimer));
+
+    PRINTF("timesynch: send sync msg (auth level %d, auth offset: %u)\n",
+           authority_level, offset);
+    msg.authority_level = authority_level;
+    msg.dummy = 0;
+    msg.authority_offset = offset;
+    msg.clock_fine = clock_fine();
+    msg.clock_time = clock_time();
+    msg.seconds = clock_seconds();
+    msg.timestamp = 0;
+    packetbuf_copyfrom(&msg, sizeof(msg));
+    packetbuf_set_attr(PACKETBUF_ATTR_PACKET_TYPE,
+                       PACKETBUF_ATTR_PACKET_TYPE_TIMESTAMP);
+    broadcast_send(&broadcast);
+
+    PROCESS_WAIT_UNTIL(etimer_expired(&intervaltimer));
+    interval *= 2;
+    if(interval >= MAX_INTERVAL) {
+      interval = MAX_INTERVAL;
+    }
+  }
+
+  PROCESS_END();
+}
 /*---------------------------------------------------------------------------*/
 void
 timesynch_init(void)
 {
-  rime_sniffer_add(&sniffer);
-  last_correction = 0;
-  authority_timeouts = 0;
-  ctimer_set(&authority_timer, AUTHORITY_BASE_TIMEOUT,
-      periodic_authority_increase, NULL);
-
+  process_start(&timesynch_process, NULL);
 }
 /*---------------------------------------------------------------------------*/
- /* TIMESYNCH_CONF_ENABLED */
+#endif /* TIMESYNCH_CONF_ENABLED */
 /** @} */
