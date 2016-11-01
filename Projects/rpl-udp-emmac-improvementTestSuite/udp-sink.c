@@ -61,6 +61,7 @@ AUTOSTART_PROCESSES(&udp_server_process);
 static void
 tcpip_handler(void)
 {
+	printf("TCP_HDLR\n");
 	char *appdata;
 	linkaddr_t sender;
 	uint8_t seqno;

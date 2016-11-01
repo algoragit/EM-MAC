@@ -8,6 +8,7 @@
   <project EXPORT="discard">[APPS_DIR]/powertracker</project>
   <simulation>
     <title>BMRF-test-z1</title>
+    <speedlimit>1.0</speedlimit>
     <randomseed>28974</randomseed>
     <motedelay_us>1000000</motedelay_us>
     <radiomedium>
@@ -92,20 +93,6 @@
       <breakpoints />
       <interface_config>
         org.contikios.cooja.interfaces.Position
-        <x>111.7391871978742</x>
-        <y>51.680281086630195</y>
-        <z>0.0</z>
-      </interface_config>
-      <interface_config>
-        org.contikios.cooja.mspmote.interfaces.MspMoteID
-        <id>3</id>
-      </interface_config>
-      <motetype_identifier>zolertia2</motetype_identifier>
-    </mote>
-    <mote>
-      <breakpoints />
-      <interface_config>
-        org.contikios.cooja.interfaces.Position
         <x>27.418717561948316</x>
         <y>20.61179734183056</y>
         <z>0.0</z>
@@ -127,34 +114,6 @@
       <interface_config>
         org.contikios.cooja.mspmote.interfaces.MspMoteID
         <id>5</id>
-      </interface_config>
-      <motetype_identifier>zolertia2</motetype_identifier>
-    </mote>
-    <mote>
-      <breakpoints />
-      <interface_config>
-        org.contikios.cooja.interfaces.Position
-        <x>112.0096573546798</x>
-        <y>84.2783800107988</y>
-        <z>0.0</z>
-      </interface_config>
-      <interface_config>
-        org.contikios.cooja.mspmote.interfaces.MspMoteID
-        <id>6</id>
-      </interface_config>
-      <motetype_identifier>zolertia2</motetype_identifier>
-    </mote>
-    <mote>
-      <breakpoints />
-      <interface_config>
-        org.contikios.cooja.interfaces.Position
-        <x>161.9</x>
-        <y>54.22</y>
-        <z>0.0</z>
-      </interface_config>
-      <interface_config>
-        org.contikios.cooja.mspmote.interfaces.MspMoteID
-        <id>7</id>
       </interface_config>
       <motetype_identifier>zolertia2</motetype_identifier>
     </mote>
@@ -186,34 +145,6 @@
       </interface_config>
       <motetype_identifier>zolertia2</motetype_identifier>
     </mote>
-    <mote>
-      <breakpoints />
-      <interface_config>
-        org.contikios.cooja.interfaces.Position
-        <x>81.75128154698672</x>
-        <y>114.50716742290496</y>
-        <z>0.0</z>
-      </interface_config>
-      <interface_config>
-        org.contikios.cooja.mspmote.interfaces.MspMoteID
-        <id>10</id>
-      </interface_config>
-      <motetype_identifier>zolertia2</motetype_identifier>
-    </mote>
-    <mote>
-      <breakpoints />
-      <interface_config>
-        org.contikios.cooja.interfaces.Position
-        <x>138.66585421644575</x>
-        <y>115.71359944392562</y>
-        <z>0.0</z>
-      </interface_config>
-      <interface_config>
-        org.contikios.cooja.mspmote.interfaces.MspMoteID
-        <id>11</id>
-      </interface_config>
-      <motetype_identifier>zolertia2</motetype_identifier>
-    </mote>
   </simulation>
   <plugin>
     org.contikios.cooja.plugins.SimControl
@@ -233,31 +164,23 @@
       <viewport>1.0225120120383877 0.0 0.0 1.0225120120383877 54.537477806359064 49.902203208407784</viewport>
     </plugin_config>
     <width>370</width>
-    <z>2</z>
+    <z>6</z>
     <height>262</height>
-    <location_x>136</location_x>
-    <location_y>201</location_y>
+    <location_x>6</location_x>
+    <location_y>280</location_y>
   </plugin>
   <plugin>
     org.contikios.cooja.plugins.LogListener
     <plugin_config>
-      <filter>ID:4</filter>
+      <filter>ID:5</filter>
       <formatted_time />
       <coloring />
     </plugin_config>
-    <width>841</width>
-    <z>1</z>
-    <height>685</height>
-    <location_x>802</location_x>
-    <location_y>22</location_y>
-  </plugin>
-  <plugin>
-    PowerTracker
-    <width>629</width>
+    <width>658</width>
     <z>4</z>
-    <height>523</height>
-    <location_x>-10</location_x>
-    <location_y>37</location_y>
+    <height>685</height>
+    <location_x>441</location_x>
+    <location_y>36</location_y>
   </plugin>
   <plugin>
     org.contikios.cooja.plugins.ScriptRunner
@@ -494,21 +417,52 @@ while(true){&#xD;
       <mote>3</mote>
       <mote>4</mote>
       <mote>5</mote>
-      <mote>6</mote>
-      <mote>7</mote>
-      <mote>8</mote>
-      <mote>9</mote>
-      <mote>10</mote>
       <showRadioRXTX />
+      <showRadioChannels />
       <showRadioHW />
       <showLEDs />
-      <zoomfactor>20000.0</zoomfactor>
+      <showLogOutput />
+      <zoomfactor>100000.0</zoomfactor>
     </plugin_config>
     <width>1675</width>
     <z>3</z>
-    <height>308</height>
+    <height>306</height>
     <location_x>0</location_x>
     <location_y>725</location_y>
+  </plugin>
+  <plugin>
+    org.contikios.cooja.plugins.LogListener
+    <plugin_config>
+      <filter>RES=2_1</filter>
+      <formatted_time />
+      <coloring />
+    </plugin_config>
+    <width>920</width>
+    <z>1</z>
+    <height>518</height>
+    <location_x>32</location_x>
+    <location_y>8</location_y>
+  </plugin>
+  <plugin>
+    org.contikios.cooja.plugins.LogListener
+    <plugin_config>
+      <filter>;5;</filter>
+      <formatted_time />
+      <coloring />
+    </plugin_config>
+    <width>581</width>
+    <z>5</z>
+    <height>255</height>
+    <location_x>1106</location_x>
+    <location_y>463</location_y>
+  </plugin>
+  <plugin>
+    PowerTracker
+    <width>400</width>
+    <z>2</z>
+    <height>400</height>
+    <location_x>1177</location_x>
+    <location_y>50</location_y>
   </plugin>
 </simconf>
 

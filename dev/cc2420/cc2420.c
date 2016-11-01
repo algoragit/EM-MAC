@@ -539,10 +539,10 @@ set_txpower(uint8_t power)
   setreg(CC2420_TXCTRL, reg);
 }
 /*---------------------------------------------------------------------------*/
-#define AUTOACK (1 << 4)
-#define AUTOCRC (1 << 5)
+#define AUTOACK (1 << 4)  // cmga changed from #define AUTOACK (1 << 4)
+#define AUTOCRC (1 << 5)  // cmga changed from #define AUTOCRC (1 << 5)
 #define ADR_DECODE (1 << 11)
-#define RXFIFO_PROTECTION (1 << 9)
+#define RXFIFO_PROTECTION (1 << 9)	// cmga changed from #define AUTOCRC (1 << 9)
 #define CORR_THR(n) (((n) & 0x1f) << 6)
 #define FIFOP_THR(n) ((n) & 0x7f)
 #define RXBPF_LOCUR (1 << 13);
@@ -855,9 +855,9 @@ cc2420_set_pan_addr(unsigned pan,
 int
 cc2420_interrupt(void)
 {
+	  //printf("CC2420 INT\n");
   CC2420_CLEAR_FIFOP_INT();
   process_poll(&cc2420_process);
-
 
   return 1;
 }
@@ -888,7 +888,6 @@ PROCESS_THREAD(cc2420_process, ev, data)
 static int
 cc2420_read(void *buf, unsigned short bufsize)
 {
-	//printf("r\n");
   uint8_t footer[FOOTER_LEN];
   uint8_t len;
 
@@ -901,13 +900,17 @@ cc2420_read(void *buf, unsigned short bufsize)
   getrxdata(&len, 1);
 
   if(len > CC2420_MAX_PACKET_LEN) {
+	  //printf("r1 ");
     /* Oops, we must be out of sync. */
     RIMESTATS_ADD(badsynch);
   } else if(len <= FOOTER_LEN) {
+	  //printf("r2 ");
     RIMESTATS_ADD(tooshort);
   } else if(len - FOOTER_LEN > bufsize) {
+	  //printf("r3 ");
     RIMESTATS_ADD(toolong);
   } else {
+	  //printf("r4 ");
     getrxdata((uint8_t *) buf, len - FOOTER_LEN);
     getrxdata(footer, FOOTER_LEN);
     
@@ -920,28 +923,34 @@ cc2420_read(void *buf, unsigned short bufsize)
   
       RIMESTATS_ADD(llrx);
     } else {
+    	//printf("r5 ");
       RIMESTATS_ADD(badcrc);
       len = FOOTER_LEN;
     }
   
     if(CC2420_FIFOP_IS_1) {
+    	//printf("r6 ");
       if(!CC2420_FIFO_IS_1) {
+    	  //printf("r7 ");
         /* Clean up in case of FIFO overflow!  This happens for every
          * full length frame and is signaled by FIFOP = 1 and FIFO =
          * 0. */
         flushrx();
       } else {
+    	  //printf("r8 ");
         /* Another packet has been received and needs attention. */
         process_poll(&cc2420_process);
       }
     }
     
     RELEASE_LOCK();
+    //printf("r9 \n");
     return len - FOOTER_LEN;
   }
   
   flushrx();
   RELEASE_LOCK();
+  //printf("r10 \n");
   return len;
 }
 /*---------------------------------------------------------------------------*/
@@ -1034,6 +1043,16 @@ cc2420_cca(void)
 int
 cc2420_receiving_packet(void)
 {
+	/*if (CC2420_SFD_IS_1 && CC2420_FIFO_IS_1){
+		printf("1 ");}
+		/*while (CC2420_SFD_IS_1){
+			CC2420_SFD_IS_1 ||  || CC2420_FIFOP_IS_1
+		}
+			printf("%u%u\n", CC2420_FIFO_IS_1, CC2420_FIFOP_IS_1);
+		}*/
+	/*else{
+		printf("0\n");
+	}*/
   return CC2420_SFD_IS_1;
 }
 /*---------------------------------------------------------------------------*/

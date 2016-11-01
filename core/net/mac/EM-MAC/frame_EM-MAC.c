@@ -131,7 +131,7 @@ field_len(frame802154_t *p, field_length_t *flen)
   }
 
   /* Set PAN ID compression bit if src pan id matches dest pan id. */
-  if(p->fcf.dest_addr_mode & 3 && p->fcf.src_addr_mode & 3 &&
+  if((p->fcf.dest_addr_mode & 3) && (p->fcf.src_addr_mode & 3) &&
      p->src_pid == p->dest_pid) {
     p->fcf.panid_compression = 1;
 
