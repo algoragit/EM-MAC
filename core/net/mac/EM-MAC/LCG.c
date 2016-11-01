@@ -36,6 +36,7 @@ unsigned int get_neighbor_wake_up_time(neighbor_state v, uint8_t *neighbor_chann
 	unsigned long local_seconds = clock_seconds();
 	unsigned int iteration=0;
 	unsigned int seed_temp;
+<<<<<<< HEAD
 	// Correct the time for the clock difference with the neighbor
 	if (diff_tics>=0){
 		next_wake_secs=next_wake_secs + diff_secs + (next_wake_tics + diff_tics)/RTIMER_SECOND;
@@ -67,4 +68,80 @@ unsigned int get_neighbor_wake_up_time(neighbor_state v, uint8_t *neighbor_chann
 	//printf("_wait_bef:n_sec:%u n_tic:%u diff_s:%d diff_t:%d now:%u\n",
 			//next_wake_secs, next_wake_tics, diff_secs, diff_tics, RTIMER_NOW());
 	return next_wake_tics - RTIMER_SECOND/728;
+=======
+	/*printf("%d.%d  STARTING point: secs=%u tics=%u LOCAL_SECS:%lu\n",
+			iteration, v.node_link_addr.u8[7], next_wake_secs, next_wake_tics, local_seconds);*/
+	unsigned int next_wake_tics_temp=0;
+	while ((next_wake_secs < (local_seconds - diff_secs)) || ((next_wake_tics < (unsigned int)((long int)(RTIMER_NOW())-diff_tics)) && (next_wake_secs == (local_seconds - diff_secs)))){
+		iteration++;
+		seed_temp=current_seed;
+		current_seed=((15213*current_seed)+11237);
+		next_wake_tics_temp = current_seed%RTIMER_SECOND + RTIMER_SECOND/2;
+
+		/**************************************************************************************************************************************************************************************/
+		if (next_wake_tics < RTIMER_SECOND){
+			if ((next_wake_tics_temp + next_wake_tics) < next_wake_tics){
+				next_wake_secs+=2;
+			}
+			if ((next_wake_tics_temp + next_wake_tics) > RTIMER_SECOND){
+				next_wake_secs++;
+			}
+		}
+		if (next_wake_tics > RTIMER_SECOND){
+			if ((next_wake_tics_temp + next_wake_tics) < RTIMER_SECOND){
+				next_wake_secs++;
+			}
+			if (((next_wake_tics_temp + next_wake_tics) > RTIMER_SECOND) && ((next_wake_tics_temp + next_wake_tics) < next_wake_tics)){
+				next_wake_secs+=2;
+			}
+		}
+		// Adding the time spent awake by the node
+		next_wake_tics += next_wake_tics_temp;
+		local_seconds = clock_seconds();
+		/*printf("%u. ", iteration);
+		printf("Neighbor: %d  POINT: c_seed=%u secs=%u tics_t=%u tics_a=%u  L_SECS:%lu\n",
+				v.node_link_addr.u8[7], current_seed, next_wake_secs, next_wake_tics_temp, next_wake_tics, local_seconds);*/
+
+		// Adding the time spent awake by the node
+		/*if ((next_wake_tics + ON_PERIOD) > RTIMER_SECOND){
+			next_wake_tics = (next_wake_tics + ON_PERIOD)%RTIMER_SECOND;
+			next_wake_secs++;
+		}else {
+			next_wake_tics += ON_PERIOD;
+		}
+		//neighbor_channel = channel_list_n[channel_pointer_n%16];
+		if (linkaddr_node_addr.u8[0] == 2){
+					printf("Channel: %d, Time: %u      ", neighbor_channel, next_wake_tics_temp);
+					printf("Predicted: Ticks: %u, Seconds: %d    ", next_wake_tics, next_wake_secs);
+					printf("Local    : Ticks: %u, Seconds: %d\n", RTIMER_NOW()%RTIMER_SECOND, local_seconds);
+				}
+		channel_pointer_n++;
+		rand_num_neighbor=rand_num_neighbor*multiplier+increment;
+		if (neighbor_channel == channel_list_n[15]){
+			last_cycle_ticks=next_wake_tics;
+			last_cycle_seconds=next_wake_secs;
+			last_cycle_seed=rand_num_neighbor;
+			from_last_state = 1;
+			//printf("LastCycleState: Ticks: %u, Seconds: %u, Seed: %u, Channel: %d\n", last_cycle_ticks, last_cycle_seconds, last_cycle_seed, neighbor_channel);
+		}
+		//local_seconds = clock_seconds()- 31;*/
+		/**************************************************************************************************************************************************************************************/
+		//printf(" next_wake: %u\n", next_wake_tics);
+	}
+	/*printf("%u.%d secs=%u tics_a=%u tics_t=%u L_SECS:%lu L_TICS:%u DIFF_TICS:%ld DIFF_SECS:%d\n",
+			iteration, v.node_link_addr.u8[7], next_wake_secs, next_wake_tics, next_wake_tics_temp, local_seconds, RTIMER_NOW(), diff_tics, diff_secs);*/
+	//printf("%u\n", RTIMER_NOW()-start_tics);
+	/*printf("Test Channels: \n");
+	unsigned int seed=linkaddr_node_addr.u8[7];
+	int i=0;
+	for (i=0; i < 32; i++){
+		seed = ((15213*(seed))+11237);
+		seed = ((15213*(seed))+11237);
+		printf("%d ", seed % (unsigned int)(16) + 11);
+		if (i==15) printf("\n");
+	}
+	printf("\n");*/
+
+	return next_wake_tics+diff_tics;
+>>>>>>> ea47d4cb6aa2071e4e5f4654b7d749e755f3f02b
 }
