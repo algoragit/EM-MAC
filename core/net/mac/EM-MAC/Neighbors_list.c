@@ -34,20 +34,12 @@ neighbor_state get_neighbor_state (list_t  Neighbors,linkaddr_t addr)
 
 			st.blacklist=s->blacklist;
 			st.wake_time_tics=s->wake_time_tics;
-<<<<<<< HEAD
 			st.d_secs=s->d_secs;
 			st.last_seed=s->last_seed;
 			st.last_channel=s->last_channel;
 			st.wake_time_seconds=s->wake_time_seconds;
 			st.d_tics=s->d_tics;
 			st.consecutive_failed_tx=s->consecutive_failed_tx;
-=======
-			st.m=s->m;
-			st.last_seed=s->last_seed;
-			st.last_channel=s->last_channel;
-			st.wake_time_seconds=s->wake_time_seconds;
-			st.n=s->n;
->>>>>>> ea47d4cb6aa2071e4e5f4654b7d749e755f3f02b
 			linkaddr_copy(&st.node_link_addr,&addr);
 			return st;
 		}
