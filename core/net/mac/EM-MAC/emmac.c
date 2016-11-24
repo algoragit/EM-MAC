@@ -87,7 +87,7 @@ int transmitting=0;
 int waiting_to_transmit=0;
 int syncing=0;
 //int syncing=0;
-unsigned int list_of_channels[16]={0};
+unsigned int list_of_channels[15]={0};
 static rtimer_clock_t wt4powercycle;
 unsigned int time_to_wait_awake;
 static int offset;
@@ -124,7 +124,7 @@ struct send_arg {
 };
 static struct send_arg delay_arg[4];
 
-#define MEMB_SIZE 8    // Limits the number of neighbors
+#define MEMB_SIZE 10    // Limits the number of neighbors
 MEMB(neighbor_memb, neighbor_state, MEMB_SIZE);
 LIST(Neighbors);
 
@@ -535,7 +535,7 @@ static char reception_powercycle(void)
 				off(0);
 			}
 		}
-		current_channel=(current_channel+1)%16;
+		current_channel=(current_channel+1)%15;
 
 		if (clock_seconds()%900 < 2){ // 15mins
 			/*printf("succ:%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u\n",
@@ -604,16 +604,16 @@ static int send_one_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver, 
 				beacon_src_addr.u8[7] = beaconbuf[addr_start_byte--];
 				if(linkaddr_cmp(&beacon_src_addr, &receiver)){
 					good_beacon=1;
-					printf("rx1\n");
+					//printf("rx1\n");
 					//printf("beaconbuf[1]=%u\n", beaconbuf[1]);
 					if ((len == BEACON_LENGTH) && (beaconbuf[17]==1)){
 						//printf("RES=%d_%d RxBusy\n_r_wait:%d,%u,%u(t)\n", 1, receiver.u8[7], receiver.u8[7], RTIMER_NOW()- wt, iteration_out[0]);
 						beacon_failed_tx++;
-						printf("rx2\n");
+						//printf("rx2\n");
 						break;
 					} else {
 						//printf("_r_wait:%d,%u,%u\n", receiver.u8[7],RTIMER_NOW()- wt, iteration_out[0]);
-						printf("rx3\n");
+						//printf("rx3\n");
 						beacon_received=1;
 					}
 				}
@@ -705,7 +705,7 @@ static int send_one_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver, 
          already received a packet that needs to be read before
          sending with auto ack. */
 			//leds_on(LEDS_GREEN);
-			printf("RES=3_%u\n", receiver.u8[7]);
+			//printf("RES=3_%u\n", receiver.u8[7]);
 			failed_try_again++;
 			return 3;
 		}else {
@@ -798,7 +798,7 @@ static int send_one_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver, 
 				}
 				break;
 			case RADIO_TX_COLLISION:
-				printf("RES=3_%u\n", receiver.u8[7]);
+				//printf("RES=3_%u\n", receiver.u8[7]);
 				failed_try_again++;
 				return 3;
 			default:
@@ -831,7 +831,7 @@ static int send_one_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver, 
 		failed++;
 		break;
 	}
-	printf("RES=%u_%d\n",ret, receiver.u8[7]);
+	//printf("RES=%u_%d\n",ret, receiver.u8[7]);
 	if(is_broadcast){
 		mac_call_sent_callback(sent, ptr, MAC_TX_OK, 1);
 	}else{
@@ -846,7 +846,7 @@ static int send_one_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver, 
 /*---------------------------------------------------------------------------*/
 static int resync_neighbor(mac_callback_t sent, linkaddr_t receiver, void *ptr, struct rdc_buf_list *buf_list){
 	syncing=1;
-	timer_set(&w,((CLOCK_SECOND*48))); // 48s = 2 * 16channels * (TmaxInterval==1.5s)
+	timer_set(&w,((CLOCK_SECOND*45))); // 48s = 2 * 15channels * (TmaxInterval==1.5s)
 	uint8_t beaconbuf[BEACON_LENGTH];
 	rtimer_clock_t wt;
 	uint8_t ret=0;
@@ -1083,16 +1083,16 @@ static int send_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver, stru
 					beacon_src_addr.u8[7] = beaconbuf[addr_start_byte--];
 					if(linkaddr_cmp(&beacon_src_addr, &receiver)){
 						good_beacon=1;
-						printf("rx1\n");
+						//printf("rx1\n");
 						//printf("beaconbuf[1]=%u\n", beaconbuf[1]);
 						if ((len == BEACON_LENGTH) && (beaconbuf[17]==1)){
 							//printf("RES=%d_%d RxBusy\n_r_wait:%d,%u,%u(t)\n", 1, receiver.u8[7], receiver.u8[7], RTIMER_NOW()- wt, iteration_out[0]);
 							beacon_failed_tx++;
-							printf("rx2\n");
+							//printf("rx2\n");
 							break;
 						} else {
 							//printf("_r_wait:%d,%u,%u\n", receiver.u8[7],RTIMER_NOW()- wt, iteration_out[0]);
-							printf("rx3\n");
+							//printf("rx3\n");
 							beacon_received=1;
 						}
 					}
@@ -1184,7 +1184,7 @@ static int send_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver, stru
 	         already received a packet that needs to be read before
 	         sending with auto ack. */
 				//leds_on(LEDS_GREEN);
-				printf("RES=3_%u CCA\n", receiver.u8[7]);
+				//printf("RES=3_%u CCA\n", receiver.u8[7]);
 				failed_try_again++;
 				return 3;
 			}else {
@@ -1277,7 +1277,7 @@ static int send_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver, stru
 					}
 					break;
 				case RADIO_TX_COLLISION:
-					printf("RES=3_%u COL\n", receiver.u8[7]);
+					//printf("RES=3_%u COL\n", receiver.u8[7]);
 					failed_try_again++;
 					return 3;
 				default:
@@ -1310,7 +1310,7 @@ static int send_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver, stru
 			failed++;
 			break;
 		}
-		printf("RES=%u_%d\n",ret, receiver.u8[7]);
+		//printf("RES=%u_%d\n",ret, receiver.u8[7]);
 		if(is_broadcast){
 			mac_call_sent_callback(sent, ptr, MAC_TX_OK, 1);
 		}else{
@@ -1579,10 +1579,10 @@ static void init(void)
 	off(0);
 	transmitting = 0;
 	NETSTACK_RADIO.set_value(RADIO_PARAM_CHANNEL, 26);
-	generate_ch_list(&list_of_channels, linkaddr_node_addr.u8[7], 16);
+	generate_ch_list(&list_of_channels, linkaddr_node_addr.u8[7], 15);
 	/*printf("Channel List: ");
 	int i=0;
-	for (i=0; i < 16; i++){
+	for (i=0; i < 15; i++){
 		printf("%u  ", list_of_channels[i]);
 	}
 	printf("\n");*/
