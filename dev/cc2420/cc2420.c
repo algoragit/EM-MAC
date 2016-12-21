@@ -353,7 +353,7 @@ write_ram(const uint8_t *buffer,
     enum write_ram_order order)
 {
   uint8_t i;
-  
+
   CC2420_SPI_ENABLE();
   SPI_WRITE_FAST(0x80 | (adr & 0x7f));
   SPI_WRITE_FAST((adr >> 1) & 0xc0);
@@ -913,6 +913,7 @@ cc2420_read(void *buf, unsigned short bufsize)
 	  //printf("r4 ");
     getrxdata((uint8_t *) buf, len - FOOTER_LEN);
     getrxdata(footer, FOOTER_LEN);
+    uint8_t *test=buf;
     
     if(footer[1] & FOOTER1_CRC_OK) {
       cc2420_last_rssi = footer[0] + RSSI_OFFSET;

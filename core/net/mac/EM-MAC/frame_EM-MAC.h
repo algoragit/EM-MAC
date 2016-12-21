@@ -198,6 +198,15 @@ typedef struct {
 int frame_emmac_hdrlen(frame802154_t *p);
 int frame_emmac_create(frame802154_t *p, uint8_t *buf);
 int frame_emmac_parse(uint8_t *data, int length, frame802154_t *pf);
+int frame_emmac_create_eb_ack(uint8_t *beacon_data, uint8_t type,
+		uint8_t pending,
+		uint8_t seq,
+		unsigned int w_up_time,
+		unsigned int time_in_seconds,
+		unsigned int initial_rand_seed,
+		unsigned int w_up_ch,
+		unsigned int waiting_to_transmit);
+int frame_emmac_parse_eb_ack(uint8_t *data, int length, frame802154_t *pf);
 
 /** @} */
 #endif /* FRAME_802154_H */

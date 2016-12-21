@@ -200,7 +200,7 @@ create_frame(int type, int do_create)
 		params.random_seed=packetbuf_attr(PACKETBUF_ATTR_NODE_RAND_SEED);
 
 	/*Set the blacklist*/
-	if(params.fcf.frame_type==0)
+//	if(params.fcf.frame_type==0)
 		params.blacklist=packetbuf_attr(PACKETBUF_ATTR_NODE_BLACKLIST);
 
 	params.payload = packetbuf_dataptr();
@@ -274,7 +274,7 @@ parse(void)
 		if(frame.fcf.rand_seed_flag)
 			packetbuf_set_attr(PACKETBUF_ATTR_NODE_RAND_SEED, frame.random_seed);
 
-		if(frame.fcf.frame_type==0)
+//		if(frame.fcf.frame_type==0)
 			packetbuf_set_attr(PACKETBUF_ATTR_NODE_BLACKLIST, frame.blacklist);
 
 		packetbuf_set_attr(PACKETBUF_ATTR_NODE_TIMESTAMP_FLAG, frame.fcf.timestamp_flag);
