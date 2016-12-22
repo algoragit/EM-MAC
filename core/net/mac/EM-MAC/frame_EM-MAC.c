@@ -433,11 +433,11 @@ frame_emmac_parse(uint8_t *data, int len, frame802154_t *pf)
 		pf->blacklist= p[0]+ (p[1] << 8);
 		p += 2;
 	}
-	printf("stateRX: %04x(%u) %04x(%u) %04x(%u) %04x(%u)\n",
-			pf->timestamp,pf->timestamp,
-			pf->clock_time,pf->clock_time,
-			pf->random_seed,pf->random_seed,
-			pf->blacklist, pf->blacklist);
+//	printf("stateRX: %04x(%u) %04x(%u) %04x(%u) %04x(%u)\n",
+//			pf->timestamp,pf->timestamp,
+//			pf->clock_time,pf->clock_time,
+//			pf->random_seed,pf->random_seed,
+//			pf->blacklist, pf->blacklist);
 
 #if LLSEC802154_SECURITY_LEVEL
 	if(fcf.security_enabled) {
