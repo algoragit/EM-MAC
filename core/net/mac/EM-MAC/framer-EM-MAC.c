@@ -105,8 +105,6 @@ create_frame(int type, int do_create)
 
 	params.fcf.frame_type = type;
 	params.fcf.frame_pending = packetbuf_attr(PACKETBUF_ATTR_PENDING);
-//	params.fcf.timestamp_flag= packetbuf_attr( PACKETBUF_ATTR_NODE_TIMESTAMP_FLAG);
-//	params.fcf.rand_seed_flag = packetbuf_attr( PACKETBUF_ATTR_NODE_RAND_SEED_FLAG);
 	params.fcf.state_flag =packetbuf_attr( PACKETBUF_ATTR_NODE_STATE_FLAG);
 	if(packetbuf_holds_broadcast()) {
 		params.fcf.ack_required = 0;
@@ -212,7 +210,8 @@ create_frame(int type, int do_create)
 		/*Set the blacklist*/
 		params.blacklist=packetbuf_attr(PACKETBUF_ATTR_NODE_BLACKLIST);
 		/* Timestamp in seconds */
-		params.clock_time_sent = clock_seconds();
+		params.clock_time_sent = (unsigned int)(clock_seconds());  // This value is substituted by the SFD timestamp at the radio driver.
+		params.radio_timestamp = 0x0000;  // This value is substituted by the SFD timestamp at the radio driver.
 	}
 
 	params.payload = packetbuf_dataptr();
@@ -232,7 +231,7 @@ create_frame(int type, int do_create)
 
 		return hdr_len;
 	} else {
-		printf("15.4-OUT: too large header: %u\n", hdr_len);
+		PRINTF("15.4-OUT: too large header: %u\n", hdr_len);
 		return FRAMER_FAILED;
 	}
 }
@@ -297,6 +296,8 @@ parse(void)
 			packetbuf_set_attr(PACKETBUF_ATTR_NODE_CLOCK_TIME, frame.clock_time);
 			packetbuf_set_attr(PACKETBUF_ATTR_NODE_RAND_SEED, frame.random_seed);
 			packetbuf_set_attr(PACKETBUF_ATTR_NODE_BLACKLIST, frame.blacklist);
+			packetbuf_set_attr(PACKETBUF_ATTR_NODE_CLOCK_TIME_SENT, frame.clock_time_sent);
+			packetbuf_set_attr(PACKETBUF_ATTR_NODE_RADIO_TIMESTAMP, frame.radio_timestamp);
 		}
 		packetbuf_set_attr(PACKETBUF_ATTR_NODE_STATE_FLAG, frame.fcf.state_flag);
 

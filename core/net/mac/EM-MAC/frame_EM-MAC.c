@@ -82,7 +82,8 @@ typedef struct {
 	uint8_t clock_time_len;  /**<  Length (in bytes) of clock_time field */
 	uint8_t random_seed_len; /**<  Length (in bytes) of random seed field */
 	uint8_t blacklist_len;   /**<  Lenght (in bytes) of blacklist field*/
-	uint8_t clock_time_sent;   /**<  Lenght (in bytes) of blacklist field*/
+	uint8_t clock_time_sent_len;   /**<  Lenght (in bytes) of blacklist field*/
+	uint8_t radio_timestamp_len;   /**<  Lenght (in bytes) of blacklist field*/
 	uint8_t aux_sec_len;     /**<  Length (in bytes) of aux security header field */
 } field_length_t;
 
@@ -175,14 +176,16 @@ field_len(frame802154_t *p, field_length_t *flen)
 		flen->clock_time_len = 2;
 		flen->random_seed_len = 2;
 		flen->blacklist_len = 2;
-		flen->clock_time_sent = 2;
+		flen->clock_time_sent_len = 2;
+		flen->radio_timestamp_len = 2;
 	}
 	else{
 		flen->timestamp_len = 0;
 		flen->clock_time_len = 0;
 		flen->random_seed_len = 0;
 		flen->blacklist_len = 0;
-		flen->clock_time_sent = 0;
+		flen->clock_time_sent_len = 0;
+		flen->radio_timestamp_len = 0;
 	}
 
 
@@ -221,7 +224,8 @@ frame_emmac_hdrlen(frame802154_t *p)
 			flen.clock_time_len +
 			flen.random_seed_len +
 			flen.blacklist_len +
-			flen.clock_time_sent +
+			flen.clock_time_sent_len +
+			flen.radio_timestamp_len +
 			flen.aux_sec_len;
 }
 /*----------------------------------------------------------------------------*/
@@ -289,32 +293,6 @@ frame_emmac_create(frame802154_t *p, uint8_t *buf)
 		buf[pos++] = p->src_addr[c - 1];
 	}
 
-//	/* Timestamp */
-//	if(flen.timestamp_len ==2) {
-//		buf[pos++] = p->timestamp & 0xff;
-//		buf[pos++] = (p->timestamp>> 8) & 0xff;
-//	}
-//	if(flen.clock_time_len ==2) {
-//		buf[pos++] = p->clock_time & 0xff;
-//		buf[pos++] = (p->clock_time>> 8) & 0xff;
-//	}
-//
-//	/* Random Seed*/
-//	if(flen.random_seed_len ==2) {
-//		buf[pos++] = p->random_seed & 0xff;
-//		buf[pos++] = (p->random_seed>> 8) & 0xff;
-//	}
-//
-//	/* Blacklist */
-//	if(flen.blacklist_len ==2){
-//		buf[pos++] = p->blacklist & 0xff;
-//		buf[pos++] = (p->blacklist>> 8) & 0xff;
-//	}
-//
-//	if(flen.clock_time_sent ==2){
-//		buf[pos++] = p->clock_time_sent & 0xff;
-//		buf[pos++] = (p->clock_time_sent>> 8) & 0xff;
-//	}
 	if (p->fcf.state_flag == 1){
 		buf[pos++] = p->timestamp & 0xff;
 		buf[pos++] = (p->timestamp>> 8) & 0xff;
@@ -326,15 +304,18 @@ frame_emmac_create(frame802154_t *p, uint8_t *buf)
 		buf[pos++] = (p->blacklist>> 8) & 0xff;
 		buf[pos++] = p->clock_time_sent & 0xff;
 		buf[pos++] = (p->clock_time_sent>> 8) & 0xff;
+		buf[pos++] = p->radio_timestamp & 0xff;
+		buf[pos++] = (p->radio_timestamp>> 8) & 0xff;
 	}
 
-//	printf("c: %04x %04x %04x %04x %04x %04x\n",
+//	printf("stXt:%04x %04x %04x %04x %04x %04x %04x\n",
 //			p->fcf.frame_type,
 //			p->timestamp,
 //			p->clock_time,
 //			p->random_seed,
 //			p->blacklist,
-//			p->clock_time_sent
+//			p->clock_time_sent,
+//			p->radio_timestamp
 //			);
 
 #if LLSEC802154_SECURITY_LEVEL
@@ -468,27 +449,6 @@ frame_emmac_parse(uint8_t *data, int len, frame802154_t *pf)
 		pf->src_pid = 0;
 	}
 
-//	if(fcf.state_flag){
-//		/*Timestamp and clock_time if any*/
-//		pf->timestamp= p[0] + (p[1] << 8);
-//		p += 2;
-//		pf->clock_time= p[0] + (p[1] << 8);
-//		p += 2;
-//		/*Random seed if any*/
-//		pf->random_seed= p[0]+ (p[1] << 8);
-//		p += 2;
-//	}
-//
-//	/*Blacklist if any*/
-//	if(fcf.frame_type == FRAME802154_BEACONFRAME || fcf.frame_type == FRAME802154_DATAFRAME){
-//		pf->blacklist= p[0]+ (p[1] << 8);
-//		p += 2;
-//	}
-//
-//	if(fcf.state_flag){
-//		pf->clock_time_sent= p[0]+ (p[1] << 8);
-//		p += 2;
-//	}
 	if(fcf.state_flag){
 		/*Timestamp and clock_time if any*/
 		pf->timestamp= p[0] + (p[1] << 8);
@@ -503,8 +463,27 @@ frame_emmac_parse(uint8_t *data, int len, frame802154_t *pf)
 		p += 2;
 		pf->clock_time_sent= p[0]+ (p[1] << 8);
 		p += 2;
+		pf->radio_timestamp= p[0]+ (p[1] << 8);
+		p += 2;
 	}
 
+//	printf("stXtf: %04x(%u)\n",
+//			pf->radio_timestamp,pf->radio_timestamp);
+//	if(pf->radio_timestamp==0){
+//		int i;
+//		printf("stXtf0: %u ", fcf.dest_addr_mode);
+//		for (i=0; i<len; i++){
+//			printf("%02x", data[i]);
+//		}
+//		printf("\n");
+//		printf("stXtf: %04x(%u) %04x(%u) %04x(%u) %04x(%u) %04x(%u) %04x(%u) %04x(%u) %04x(%u)\n",
+//				pf->timestamp,pf->timestamp,
+//				pf->clock_time,pf->clock_time,
+//				pf->random_seed,pf->random_seed,
+//				pf->blacklist, pf->blacklist,
+//				pf->clock_time_sent,pf->clock_time_sent,
+//				pf->radio_timestamp,pf->radio_timestamp);
+//	}
 //	printf("stateRX: %04x(%u) %04x(%u) %04x(%u) %04x(%u)\n",
 //			pf->timestamp,pf->timestamp,
 //			pf->clock_time,pf->clock_time,
@@ -628,9 +607,16 @@ int frame_emmac_create_eb_ack(uint8_t *beacon_data, uint8_t type,
 	beacon_data[pos++] = w_up_ch;
 	if (type == FRAME802154_BEACONFRAME){
 		beacon_data[pos++] = waiting_to_transmit;
+//		printf("bts:%02x\n", beacon_data[pos-1]);
 	}
 	beacon_data[pos++] = 0;  //Se deja vacio para colocar el tiempo actual en tics a nivel fisico
 	beacon_data[pos++] = 0;
+//	printf("bts:%04x %04x %04x %04x %04x\n",
+//			initial_rand_seed,
+//			w_up_time,
+//			time_in_seconds,
+//			w_up_ch,
+//			waiting_to_transmit);
 	return pos;
 }
 

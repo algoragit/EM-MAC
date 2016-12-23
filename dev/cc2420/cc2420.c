@@ -654,13 +654,21 @@ cc2420_transmit(unsigned short payload_len)
 #else /* WITH_SEND_CCA */
   strobe(CC2420_STXON);
 #endif /* WITH_SEND_CCA */
+  int start_timestamps = 24;
+  uint8_t test;
+  read_ram((uint8_t *) &test, CC2420RAM_TXFIFO+2, 1);
+//  printf("stXtm:%u\n", (test >> 2) & 3);
+  if (((test >> 2) & 3) == FRAME802154_LONGADDRMODE){
+	  start_timestamps += 6;
+  }
+  rtimer_clock_t sfd_timestamp;
+  unsigned int sfd_timestamp_secs;
   for(i = LOOP_20_SYMBOLS; i > 0; i--) {
     if(CC2420_SFD_IS_1) {
       {
-    	rtimer_clock_t sfd_timestamp;
+//    	rtimer_clock_t sfd_timestamp;
         sfd_timestamp = RTIMER_NOW();
-        if((packetbuf_attr(PACKETBUF_ATTR_PACKET_TYPE) == PACKETBUF_ATTR_PACKET_TYPE_ACK)
-        		|| (packetbuf_attr(PACKETBUF_ATTR_NODE_RADIO_TIMESTAMP_FLAG) ==1)
+        if((packetbuf_attr(PACKETBUF_ATTR_NODE_RADIO_TIMESTAMP_FLAG) ==1)
 //				|| packetbuf_attr(PACKETBUF_ATTR_NODE_STATE_FLAG) == 1)
 				)
             {
@@ -668,7 +676,15 @@ cc2420_transmit(unsigned short payload_len)
           write_ram((uint8_t *) &sfd_timestamp, CC2420RAM_TXFIFO + payload_len - 1, 2, WRITE_RAM_IN_ORDER);
 //          printf("S_tst: %04x\n", sfd_timestamp);
         }
-        printf("cctype: %u %04x\n", packetbuf_attr(PACKETBUF_ATTR_PACKET_TYPE), sfd_timestamp);
+        if (packetbuf_attr(PACKETBUF_ATTR_PACKET_TYPE) == FRAME802154_DATAFRAME &&
+        		packetbuf_attr(PACKETBUF_ATTR_NODE_STATE_FLAG) == 1){
+        	write_ram((uint8_t *) &sfd_timestamp, CC2420RAM_TXFIFO + start_timestamps + 2, 2, WRITE_RAM_IN_ORDER);
+        	sfd_timestamp_secs = clock_seconds();
+//        	printf("btc\n");
+        	write_ram((uint8_t *) &sfd_timestamp_secs, CC2420RAM_TXFIFO + start_timestamps, 2, WRITE_RAM_IN_ORDER);
+        }
+
+//        printf("ct: %u %04x\n", packetbuf_attr(PACKETBUF_ATTR_PACKET_TYPE), sfd_timestamp);
       }
 
       if(!(get_status() & BV(CC2420_TX_ACTIVE))) {
@@ -691,7 +707,7 @@ cc2420_transmit(unsigned short payload_len)
 #endif
       ENERGEST_OFF(ENERGEST_TYPE_TRANSMIT);
       if(receive_on) {
-	ENERGEST_ON(ENERGEST_TYPE_LISTEN);
+    	  ENERGEST_ON(ENERGEST_TYPE_LISTEN);
       } else {
 	/* We need to explicitly turn off the radio,
 	 * since STXON[CCA] -> TX_ACTIVE -> RX_ACTIVE */
@@ -704,6 +720,14 @@ cc2420_transmit(unsigned short payload_len)
       }
 
       RELEASE_LOCK();
+//      uint16_t test;
+//      read_ram((uint8_t *) &test, CC2420RAM_TXFIFO + 26, 2);
+//      printf("stX:%04x %04x\n", sfd_timestamp, sfd_timestamp_secs);
+//      test=0xabcd;
+//      write_ram((uint8_t *) &test, CC2420RAM_TXFIFO + 26, 2, WRITE_RAM_IN_ORDER);
+//      read_ram((uint8_t *) &test, CC2420RAM_TXFIFO + 26, 2);
+//           printf("stXtc:%04x\n", sfd_timestamp);
+
       return RADIO_TX_OK;
     }
   }

@@ -189,6 +189,7 @@ typedef struct {
   uint16_t random_seed;           /**< Random seed used to find the channel an the wake up time**********************/
   uint16_t blacklist;              /**< Channels in which we should not transmit*************************************/
   uint16_t clock_time_sent;       /**< Actual time of the sender node in seconds when the packet is sent*********************************************/
+  uint16_t radio_timestamp;
   frame802154_aux_hdr_t aux_hdr;  /**< Aux security header */
   uint8_t *payload;               /**< Pointer to 802.15.4 payload */
   int payload_len;                /**< Length of payload field */
