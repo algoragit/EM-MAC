@@ -1,0 +1,24 @@
+[16:18:21 - main] [Cooja.java:1315] [INFO] - > Starting Cooja
+[16:18:22 - main] [Cooja.java:2856] [INFO] - External tools default settings: /external_tools_linux_64.config
+[16:18:22 - main] [Cooja.java:2886] [INFO] - External tools user settings: /home/algora/.cooja.user.properties
+[16:18:22 - main] [Simulation.java:421] [INFO] - Simulation random seed: 30726
+[16:18:22 - main] [CompileContiki.java:140] [INFO] - > make udp-sink.z1 TARGET=z1 
+[16:18:22 - main] [CompileContiki.java:140] [INFO] - > make udp-sender.z1 TARGET=z1 
+[16:18:22 - main] [MspMote.java:235] [INFO] - Loading firmware from: /home/algora/contikiemmac/Projects/rpl-udp-emmac/../rpl-udp-emmac/udp-sink.z1
+[16:18:22 - main] [MspMote.java:235] [INFO] - Loading firmware from: /home/algora/contikiemmac/Projects/rpl-udp-emmac/../rpl-udp-emmac/udp-sender.z1
+[16:18:22 - main] [MspMote.java:235] [INFO] - Loading firmware from: /home/algora/contikiemmac/Projects/rpl-udp-emmac/../rpl-udp-emmac/udp-sender.z1
+[16:18:22 - main] [MspMote.java:235] [INFO] - Loading firmware from: /home/algora/contikiemmac/Projects/rpl-udp-emmac/../rpl-udp-emmac/udp-sender.z1
+[16:18:22 - main] [MspMote.java:235] [INFO] - Loading firmware from: /home/algora/contikiemmac/Projects/rpl-udp-emmac/../rpl-udp-emmac/udp-sender.z1
+[16:18:22 - main] [MspMote.java:235] [INFO] - Loading firmware from: /home/algora/contikiemmac/Projects/rpl-udp-emmac/../rpl-udp-emmac/udp-sender.z1
+[16:18:22 - main] [MspMote.java:235] [INFO] - Loading firmware from: /home/algora/contikiemmac/Projects/rpl-udp-emmac/../rpl-udp-emmac/udp-sender.z1
+[16:18:22 - main] [MspMote.java:235] [INFO] - Loading firmware from: /home/algora/contikiemmac/Projects/rpl-udp-emmac/../rpl-udp-emmac/udp-sender.z1
+[16:18:22 - main] [MspMote.java:235] [INFO] - Loading firmware from: /home/algora/contikiemmac/Projects/rpl-udp-emmac/../rpl-udp-emmac/udp-sender.z1
+[16:18:22 - main] [MspMote.java:235] [INFO] - Loading firmware from: /home/algora/contikiemmac/Projects/rpl-udp-emmac/../rpl-udp-emmac/udp-sender.z1
+[16:18:22 - main] [MspMote.java:235] [INFO] - Loading firmware from: /home/algora/contikiemmac/Projects/rpl-udp-emmac/../rpl-udp-emmac/udp-sender.z1
+[16:18:22 - main] [Cooja.java:1781] [INFO] - Visualized plugin was not started: class org.contikios.cooja.plugins.SimControl
+[16:18:22 - main] [Cooja.java:1781] [INFO] - Visualized plugin was not started: class org.contikios.cooja.plugins.Visualizer
+[16:18:22 - main] [Cooja.java:1781] [INFO] - Visualized plugin was not started: class org.contikios.cooja.plugins.LogListener
+[16:18:23 - main] [ScriptRunner.java:430] [INFO] - Test script deactivated
+[16:18:23 - main] [LogScriptEngine.java:265] [INFO] - Script timeout in 7200000 ms
+[16:18:23 - main] [ScriptRunner.java:387] [INFO] - Test script activated
+[16:18:23 - Thread-2] [Simulation.java:252] [INFO] - Simulation main loop started, system time: 1480087103937

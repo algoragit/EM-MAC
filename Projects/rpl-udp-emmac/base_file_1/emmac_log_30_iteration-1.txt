@@ -1,0 +1,47 @@
+[15:36:12 - main] [Cooja.java:1315] [INFO] - > Starting Cooja
+[15:36:13 - main] [Cooja.java:2856] [INFO] - External tools default settings: /external_tools_linux_64.config
+[15:36:13 - main] [Cooja.java:2886] [INFO] - External tools user settings: /home/algora/.cooja.user.properties
+[15:36:13 - main] [Simulation.java:421] [INFO] - Simulation random seed: 18728
+[15:36:13 - main] [CompileContiki.java:140] [INFO] - > make udp-sink.z1 TARGET=z1 
+[15:36:13 - main] [CompileContiki.java:140] [INFO] - > make udp-sender.z1 TARGET=z1 
+[15:36:13 - main] [MspMote.java:235] [INFO] - Loading firmware from: /home/algora/contikiemmac/Projects/rpl-udp-emmac/../rpl-udp-emmac/udp-sink.z1
+[15:36:13 - main] [MspMote.java:235] [INFO] - Loading firmware from: /home/algora/contikiemmac/Projects/rpl-udp-emmac/../rpl-udp-emmac/udp-sender.z1
+[15:36:13 - main] [MspMote.java:235] [INFO] - Loading firmware from: /home/algora/contikiemmac/Projects/rpl-udp-emmac/../rpl-udp-emmac/udp-sender.z1
+[15:36:13 - main] [MspMote.java:235] [INFO] - Loading firmware from: /home/algora/contikiemmac/Projects/rpl-udp-emmac/../rpl-udp-emmac/udp-sender.z1
+[15:36:13 - main] [MspMote.java:235] [INFO] - Loading firmware from: /home/algora/contikiemmac/Projects/rpl-udp-emmac/../rpl-udp-emmac/udp-sender.z1
+[15:36:13 - main] [MspMote.java:235] [INFO] - Loading firmware from: /home/algora/contikiemmac/Projects/rpl-udp-emmac/../rpl-udp-emmac/udp-sender.z1
+[15:36:13 - main] [MspMote.java:235] [INFO] - Loading firmware from: /home/algora/contikiemmac/Projects/rpl-udp-emmac/../rpl-udp-emmac/udp-sender.z1
+[15:36:13 - main] [MspMote.java:235] [INFO] - Loading firmware from: /home/algora/contikiemmac/Projects/rpl-udp-emmac/../rpl-udp-emmac/udp-sender.z1
+[15:36:13 - main] [MspMote.java:235] [INFO] - Loading firmware from: /home/algora/contikiemmac/Projects/rpl-udp-emmac/../rpl-udp-emmac/udp-sender.z1
+[15:36:13 - main] [MspMote.java:235] [INFO] - Loading firmware from: /home/algora/contikiemmac/Projects/rpl-udp-emmac/../rpl-udp-emmac/udp-sender.z1
+[15:36:13 - main] [MspMote.java:235] [INFO] - Loading firmware from: /home/algora/contikiemmac/Projects/rpl-udp-emmac/../rpl-udp-emmac/udp-sender.z1
+[15:36:13 - main] [Cooja.java:1781] [INFO] - Visualized plugin was not started: class org.contikios.cooja.plugins.SimControl
+[15:36:13 - main] [Cooja.java:1781] [INFO] - Visualized plugin was not started: class org.contikios.cooja.plugins.Visualizer
+[15:36:13 - main] [Cooja.java:1781] [INFO] - Visualized plugin was not started: class org.contikios.cooja.plugins.LogListener
+[15:36:14 - main] [ScriptRunner.java:430] [INFO] - Test script deactivated
+[15:36:14 - main] [LogScriptEngine.java:265] [INFO] - Script timeout in 7200000 ms
+[15:36:14 - main] [ScriptRunner.java:387] [INFO] - Test script activated
+[15:36:14 - Thread-2] [Simulation.java:252] [INFO] - Simulation main loop started, system time: 1480084574919
+[15:39:19 - Thread-2] [LogScriptEngine.java:389] [INFO] - Test script at 5.00%, done in 3516.1 sec
+[15:41:49 - Thread-2] [LogScriptEngine.java:389] [INFO] - Test script at 10.00%, done in 3007.8 sec
+[15:45:07 - Thread-2] [LogScriptEngine.java:389] [INFO] - Test script at 15.00%, done in 3019.2 sec
+[15:47:46 - Thread-2] [LogScriptEngine.java:389] [INFO] - Test script at 20.00%, done in 2765.2 sec
+[15:49:44 - Thread-2] [LogScriptEngine.java:389] [INFO] - Test script at 25.00%, done in 2427.4 sec
+[15:51:55 - Thread-2] [LogScriptEngine.java:389] [INFO] - Test script at 30.00%, done in 2194.5 sec
+[15:53:47 - Thread-2] [LogScriptEngine.java:389] [INFO] - Test script at 35.00%, done in 1954.0 sec
+[15:55:50 - Thread-2] [LogScriptEngine.java:389] [INFO] - Test script at 40.00%, done in 1763.5 sec
+[15:57:30 - Thread-2] [LogScriptEngine.java:389] [INFO] - Test script at 45.00%, done in 1558.9 sec
+[15:59:23 - Thread-2] [LogScriptEngine.java:389] [INFO] - Test script at 50.00%, done in 1388.3 sec
+[16:01:02 - Thread-2] [LogScriptEngine.java:389] [INFO] - Test script at 55.00%, done in 1217.0 sec
+[16:02:45 - Thread-2] [LogScriptEngine.java:389] [INFO] - Test script at 60.00%, done in 1060.4 sec
+[16:04:34 - Thread-2] [LogScriptEngine.java:389] [INFO] - Test script at 65.00%, done in 915.4 sec
+[16:06:27 - Thread-2] [LogScriptEngine.java:389] [INFO] - Test script at 70.00%, done in 776.7 sec
+[16:08:03 - Thread-2] [LogScriptEngine.java:389] [INFO] - Test script at 75.00%, done in 636.1 sec
+[16:09:47 - Thread-2] [LogScriptEngine.java:389] [INFO] - Test script at 80.00%, done in 503.1 sec
+[16:11:32 - Thread-2] [LogScriptEngine.java:389] [INFO] - Test script at 85.00%, done in 373.6 sec
+[16:13:42 - Thread-2] [LogScriptEngine.java:389] [INFO] - Test script at 90.00%, done in 249.7 sec
+[16:16:04 - Thread-2] [LogScriptEngine.java:389] [INFO] - Test script at 95.00%, done in 125.8 sec
+[16:18:20 - Thread-2] [LogScriptEngine.java:375] [INFO] - Timeout event @ 7200000000
+[16:18:20 - Thread-1] [LogScriptEngine.java:309] [INFO] - Test script finished
+[16:18:20 - Thread-2] [Simulation.java:311] [INFO] - Simulation main loop stopped, system time: 1480087100680	Duration: 2525761 ms	Simulated time 7200000 ms	Ratio 2.8506260093492615
+[16:18:21 - AWT-EventQueue-0] [ScriptRunner.java:430] [INFO] - Test script deactivated

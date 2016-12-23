@@ -1,0 +1,52 @@
+Random seed: 28738
+19;1935867904; 791348028; 315424768; 2482896931; 290194226;44;0
+23;3411476480; 778240829; 2771910656; 2538340387; 290194226;44;0
+8;1369833472; 1764492095; 1699020800; 2538078245; 8913714;46;0
+13;4105240576; 801243975; 3541303296; 2318336023; 290194250;46;0
+17;3283681280; 828638023; 16187392; 2270560279; 290194250;46;0
+25;3947757568; 1024787271; 3459121152; 2318598167; 290194250;46;0
+18;1486094336; 855311180; 4206493696; 2564358171; 1638662986;48;0
+22;2711093248; 809370445; 1025966080; 2640183325; 1638662986;44;0
+outs_count[2] = undefined total_subscribed = 0
+outs_count[3] = undefined total_subscribed = 0
+outs_count[4] = undefined total_subscribed = 0
+outs_count[5] = undefined total_subscribed = 0
+outs_count[6] = undefined total_subscribed = 0
+outs_count[7] = undefined total_subscribed = 0
+outs_count[8] = 50 total_subscribed = 50
+outs_count[9] = undefined total_subscribed = 50
+outs_count[10] = undefined total_subscribed = 50
+outs_count[11] = undefined total_subscribed = 50
+outs_count[12] = 1 total_subscribed = 51
+outs_count[13] = 47 total_subscribed = 98
+outs_count[14] = undefined total_subscribed = 98
+outs_count[15] = undefined total_subscribed = 98
+outs_count[16] = undefined total_subscribed = 98
+outs_count[17] = 47 total_subscribed = 145
+outs_count[18] = 49 total_subscribed = 194
+outs_count[19] = 48 total_subscribed = 242
+outs_count[20] = undefined total_subscribed = 242
+outs_count[21] = undefined total_subscribed = 242
+outs_count[22] = 46 total_subscribed = 288
+outs_count[23] = 49 total_subscribed = 337
+outs_count[24] = undefined total_subscribed = 337
+outs_count[25] = 48 total_subscribed = 385
+outs_count[26] = undefined total_subscribed = 385
+outs_count[27] = undefined total_subscribed = 385
+outs_count[28] = undefined total_subscribed = 385
+outs_count[29] = undefined total_subscribed = 385
+outs_count[30] = undefined total_subscribed = 385
+outs_count[31] = undefined total_subscribed = 385
+outs_count[32] = undefined total_subscribed = 385
+outs_count[33] = undefined total_subscribed = 385
+total_nodes:32
+PowerTracker: Extracted statistics REAL:
+AVG ON 7139293777s 99.184%
+AVG TX 611093s 0.008%
+AVG RX 1776836s 0.026%
+AVG IDLE LISTENING 7136905848s 99.150%
+AVG INT 1260s 0.000%
+
+No radio logger started!
+TEST OK
+Test ended at simulation time: 7200000000
