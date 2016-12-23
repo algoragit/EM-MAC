@@ -136,8 +136,8 @@ typedef struct {
   uint8_t frame_pending;     /**< 1 bit. True if sender has more data to send */
   uint8_t ack_required;      /**< 1 bit. Is an ack frame required? */
   uint8_t panid_compression; /**< 1 bit. Is this a compressed header? */
-  uint8_t timestamp_flag ;   /**< 1 bit. True if a Timestamp field is used in this frame*************************/
-  uint8_t rand_seed_flag ;   /**< 1 bit. True if a Random seed field is used in this frame***********************/
+//  uint8_t timestamp_flag ;   /**< 1 bit. True if a Timestamp field is used in this frame*************************/
+//  uint8_t rand_seed_flag ;   /**< 1 bit. True if a Random seed field is used in this frame***********************/
   uint8_t state_flag;         /**< 1 bit. True if a state prediction should be sended in the ACK frame************/
   uint8_t dest_addr_mode;    /**< 2 bit. Destination address mode, see 802.15.4 */
   uint8_t frame_version;     /**< 2 bit. 802.15.4 frame version */
@@ -184,10 +184,11 @@ typedef struct {
   uint8_t seq;                    /**< Sequence number */
   uint16_t dest_pid;              /**< Destination PAN ID */
   uint16_t src_pid;               /**< Source PAN ID */
-  uint16_t timestamp;             /**< Actual time of the sender node in tics************************************************/
-  uint16_t clock_time;            /**< Actual time of the sender node in seconds*********************************************/
+  uint16_t timestamp;             /**< Last wake-up time of the sender node in tics************************************************/
+  uint16_t clock_time;            /**< Last wake-up time of the sender node in seconds*********************************************/
   uint16_t random_seed;           /**< Random seed used to find the channel an the wake up time**********************/
   uint16_t blacklist;              /**< Channels in which we should not transmit*************************************/
+  uint16_t clock_time_sent;       /**< Actual time of the sender node in seconds when the packet is sent*********************************************/
   frame802154_aux_hdr_t aux_hdr;  /**< Aux security header */
   uint8_t *payload;               /**< Pointer to 802.15.4 payload */
   int payload_len;                /**< Length of payload field */
@@ -206,7 +207,6 @@ int frame_emmac_create_eb_ack(uint8_t *beacon_data, uint8_t type,
 		unsigned int initial_rand_seed,
 		unsigned int w_up_ch,
 		unsigned int waiting_to_transmit);
-int frame_emmac_parse_eb_ack(uint8_t *data, int length, frame802154_t *pf);
 
 /** @} */
 #endif /* FRAME_802154_H */

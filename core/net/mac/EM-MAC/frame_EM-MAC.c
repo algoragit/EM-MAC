@@ -82,6 +82,7 @@ typedef struct {
 	uint8_t clock_time_len;  /**<  Length (in bytes) of clock_time field */
 	uint8_t random_seed_len; /**<  Length (in bytes) of random seed field */
 	uint8_t blacklist_len;   /**<  Lenght (in bytes) of blacklist field*/
+	uint8_t clock_time_sent;   /**<  Lenght (in bytes) of blacklist field*/
 	uint8_t aux_sec_len;     /**<  Length (in bytes) of aux security header field */
 } field_length_t;
 
@@ -146,26 +147,43 @@ field_len(frame802154_t *p, field_length_t *flen)
 	flen->src_addr_len = addr_len(p->fcf.src_addr_mode & 3);
 
 	/* determine timestamp lenght*/
-	if(p->fcf.timestamp_flag ){
-		flen->timestamp_len=2;
-		flen->clock_time_len=2;}
+//	if(p->fcf.state_flag ){
+//		flen->timestamp_len=2;
+//		flen->clock_time_len=2;}
+//	else{
+//		flen->timestamp_len=0;
+//		flen->clock_time_len=0;}
+//
+//	/* determine random seed lenght */
+//	if(p->fcf.state_flag ){
+//		flen->random_seed_len=2;}
+//	else{
+//		flen->random_seed_len=0;}
+//
+//	/* determine blacklist lenght */
+//	if(p->fcf.frame_type == FRAME802154_BEACONFRAME || p->fcf.frame_type == FRAME802154_DATAFRAME){
+//		flen->blacklist_len=2;}
+//	else{
+//		flen->blacklist_len=0;}
+//
+//	if(p->fcf.state_flag ){
+//		flen->clock_time_sent = 2;
+//	}
+
+	if(p->fcf.state_flag ){
+		flen->timestamp_len = 2;
+		flen->clock_time_len = 2;
+		flen->random_seed_len = 2;
+		flen->blacklist_len = 2;
+		flen->clock_time_sent = 2;
+	}
 	else{
-		flen->timestamp_len=0;
-		flen->clock_time_len=0;}
-
-	/* determine random seed lenght */
-	if(p->fcf.rand_seed_flag ){
-		flen->random_seed_len=2;}
-	else{
-		flen->random_seed_len=0;}
-
-	/* determine blacklist lenght */
-	if(p->fcf.frame_type == FRAME802154_BEACONFRAME || p->fcf.frame_type == FRAME802154_DATAFRAME){
-		flen->blacklist_len=2;}
-	else{
-		flen->blacklist_len=0;}
-
-
+		flen->timestamp_len = 0;
+		flen->clock_time_len = 0;
+		flen->random_seed_len = 0;
+		flen->blacklist_len = 0;
+		flen->clock_time_sent = 0;
+	}
 
 
 #if LLSEC802154_SECURITY_LEVEL
@@ -194,8 +212,17 @@ frame_emmac_hdrlen(frame802154_t *p)
 {
 	field_length_t flen;
 	field_len(p, &flen);
-	return 3 + flen.dest_pid_len + flen.dest_addr_len +
-			flen.src_pid_len + flen.src_addr_len +flen.timestamp_len +flen.clock_time_len+flen.random_seed_len +flen.blacklist_len + flen.aux_sec_len;
+	return 3 +
+			flen.dest_pid_len +
+			flen.dest_addr_len +
+			flen.src_pid_len +
+			flen.src_addr_len +
+			flen.timestamp_len +
+			flen.clock_time_len +
+			flen.random_seed_len +
+			flen.blacklist_len +
+			flen.clock_time_sent +
+			flen.aux_sec_len;
 }
 /*----------------------------------------------------------------------------*/
 /**
@@ -227,9 +254,10 @@ frame_emmac_create(frame802154_t *p, uint8_t *buf)
 			((p->fcf.security_enabled & 1) << 3) |
 			((p->fcf.frame_pending & 1) << 4) |
 			((p->fcf.ack_required & 1) << 5) |
-			((p->fcf.panid_compression & 1) << 6) |
-			((p->fcf.timestamp_flag & 1) << 7);
-	buf[1] =((p->fcf.rand_seed_flag & 1) << 0)|
+			((p->fcf.panid_compression & 1) << 6);
+//			|
+//			((p->fcf.timestamp_flag & 1) << 7);
+	buf[1] =//((p->fcf.rand_seed_flag & 1) << 0)|
 			((p->fcf.state_flag & 1) << 1) |
 			((p->fcf.dest_addr_mode & 3) << 2) |
 			((p->fcf.frame_version & 3) << 4) |
@@ -261,27 +289,53 @@ frame_emmac_create(frame802154_t *p, uint8_t *buf)
 		buf[pos++] = p->src_addr[c - 1];
 	}
 
-	/* Timestamp */
-	if(flen.timestamp_len ==2) {
+//	/* Timestamp */
+//	if(flen.timestamp_len ==2) {
+//		buf[pos++] = p->timestamp & 0xff;
+//		buf[pos++] = (p->timestamp>> 8) & 0xff;
+//	}
+//	if(flen.clock_time_len ==2) {
+//		buf[pos++] = p->clock_time & 0xff;
+//		buf[pos++] = (p->clock_time>> 8) & 0xff;
+//	}
+//
+//	/* Random Seed*/
+//	if(flen.random_seed_len ==2) {
+//		buf[pos++] = p->random_seed & 0xff;
+//		buf[pos++] = (p->random_seed>> 8) & 0xff;
+//	}
+//
+//	/* Blacklist */
+//	if(flen.blacklist_len ==2){
+//		buf[pos++] = p->blacklist & 0xff;
+//		buf[pos++] = (p->blacklist>> 8) & 0xff;
+//	}
+//
+//	if(flen.clock_time_sent ==2){
+//		buf[pos++] = p->clock_time_sent & 0xff;
+//		buf[pos++] = (p->clock_time_sent>> 8) & 0xff;
+//	}
+	if (p->fcf.state_flag == 1){
 		buf[pos++] = p->timestamp & 0xff;
 		buf[pos++] = (p->timestamp>> 8) & 0xff;
-	}
-	if(flen.clock_time_len ==2) {
 		buf[pos++] = p->clock_time & 0xff;
 		buf[pos++] = (p->clock_time>> 8) & 0xff;
-	}
-
-	/* Random Seed*/
-	if(flen.random_seed_len ==2) {
 		buf[pos++] = p->random_seed & 0xff;
 		buf[pos++] = (p->random_seed>> 8) & 0xff;
-	}
-
-	/* Blacklist */
-	if(flen.blacklist_len ==2){
 		buf[pos++] = p->blacklist & 0xff;
 		buf[pos++] = (p->blacklist>> 8) & 0xff;
+		buf[pos++] = p->clock_time_sent & 0xff;
+		buf[pos++] = (p->clock_time_sent>> 8) & 0xff;
 	}
+
+//	printf("c: %04x %04x %04x %04x %04x %04x\n",
+//			p->fcf.frame_type,
+//			p->timestamp,
+//			p->clock_time,
+//			p->random_seed,
+//			p->blacklist,
+//			p->clock_time_sent
+//			);
 
 #if LLSEC802154_SECURITY_LEVEL
 	/* Aux header */
@@ -341,9 +395,9 @@ frame_emmac_parse(uint8_t *data, int len, frame802154_t *pf)
 	fcf.frame_pending = (p[0] >> 4) & 1;
 	fcf.ack_required = (p[0] >> 5) & 1;
 	fcf.panid_compression = (p[0] >> 6) & 1;
-	fcf.timestamp_flag = (p[0] >> 7) & 1;
-
-	fcf.rand_seed_flag = (p[1] >> 0) & 1;
+//	fcf.timestamp_flag = (p[0] >> 7) & 1;
+//
+//	fcf.rand_seed_flag = (p[1] >> 0) & 1;
 	fcf.state_flag = (p[1] >> 1) & 1;
 	fcf.dest_addr_mode = (p[1] >> 2) & 3;
 	fcf.frame_version = (p[1] >> 4) & 3;
@@ -414,25 +468,43 @@ frame_emmac_parse(uint8_t *data, int len, frame802154_t *pf)
 		pf->src_pid = 0;
 	}
 
-	/*Timestamp and clock_time if any*/
-	if(fcf.timestamp_flag){
+//	if(fcf.state_flag){
+//		/*Timestamp and clock_time if any*/
+//		pf->timestamp= p[0] + (p[1] << 8);
+//		p += 2;
+//		pf->clock_time= p[0] + (p[1] << 8);
+//		p += 2;
+//		/*Random seed if any*/
+//		pf->random_seed= p[0]+ (p[1] << 8);
+//		p += 2;
+//	}
+//
+//	/*Blacklist if any*/
+//	if(fcf.frame_type == FRAME802154_BEACONFRAME || fcf.frame_type == FRAME802154_DATAFRAME){
+//		pf->blacklist= p[0]+ (p[1] << 8);
+//		p += 2;
+//	}
+//
+//	if(fcf.state_flag){
+//		pf->clock_time_sent= p[0]+ (p[1] << 8);
+//		p += 2;
+//	}
+	if(fcf.state_flag){
+		/*Timestamp and clock_time if any*/
 		pf->timestamp= p[0] + (p[1] << 8);
 		p += 2;
 		pf->clock_time= p[0] + (p[1] << 8);
 		p += 2;
-	}
-
-	/*Random seed if any*/
-	if(fcf.rand_seed_flag){
+		/*Random seed if any*/
 		pf->random_seed= p[0]+ (p[1] << 8);
 		p += 2;
-	}
-
-	/*Blacklist if any*/
-	if(fcf.frame_type == FRAME802154_BEACONFRAME || fcf.frame_type == FRAME802154_DATAFRAME){
+		/*Blacklist if any*/
 		pf->blacklist= p[0]+ (p[1] << 8);
 		p += 2;
+		pf->clock_time_sent= p[0]+ (p[1] << 8);
+		p += 2;
 	}
+
 //	printf("stateRX: %04x(%u) %04x(%u) %04x(%u) %04x(%u)\n",
 //			pf->timestamp,pf->timestamp,
 //			pf->clock_time,pf->clock_time,
@@ -463,6 +535,15 @@ frame_emmac_parse(uint8_t *data, int len, frame802154_t *pf)
 	}
 #endif /* LLSEC802154_SECURITY_LEVEL */
 
+//	printf("p: %04x %04x %04x %04x %04x %04x\n",
+//			pf->fcf.frame_type,
+//			pf->timestamp,
+//			pf->clock_time,
+//			pf->random_seed,
+//			pf->blacklist,
+//			pf->clock_time_sent
+//	);
+
 	/* header length */
 	c = p - data;
 	/* payload length */
@@ -484,8 +565,8 @@ int frame_emmac_create_eb_ack(uint8_t *beacon_data, uint8_t type,
 	frame802154_t beaconframe;
 	beaconframe.fcf.frame_type = FRAME802154_BEACONFRAME;
 	beaconframe.fcf.frame_pending = pending;
-	beaconframe.fcf.timestamp_flag= 1;
-	beaconframe.fcf.rand_seed_flag = 1;
+//	beaconframe.fcf.timestamp_flag= 1;
+//	beaconframe.fcf.rand_seed_flag = 1;
 	beaconframe.fcf.state_flag =1;
 	beaconframe.fcf.ack_required = 0;
 	beaconframe.fcf.panid_compression = 0;
@@ -503,9 +584,10 @@ int frame_emmac_create_eb_ack(uint8_t *beacon_data, uint8_t type,
 			((beaconframe.fcf.security_enabled & 1) << 3) |
 			((beaconframe.fcf.frame_pending & 1) << 4) |
 			((beaconframe.fcf.ack_required & 1) << 5) |
-			((beaconframe.fcf.panid_compression & 1) << 6) |
-			((beaconframe.fcf.timestamp_flag & 1) << 7);
-	beacon_data[1] =((beaconframe.fcf.rand_seed_flag & 1) << 0)|
+			((beaconframe.fcf.panid_compression & 1) << 6);
+//			|
+//			((beaconframe.fcf.timestamp_flag & 1) << 7);
+	beacon_data[1] =//((beaconframe.fcf.rand_seed_flag & 1) << 0)|
 			((beaconframe.fcf.state_flag & 1) << 1) |
 			((beaconframe.fcf.dest_addr_mode & 3) << 2) |
 			((beaconframe.fcf.frame_version & 3) << 4) |
@@ -550,9 +632,6 @@ int frame_emmac_create_eb_ack(uint8_t *beacon_data, uint8_t type,
 	beacon_data[pos++] = 0;  //Se deja vacio para colocar el tiempo actual en tics a nivel fisico
 	beacon_data[pos++] = 0;
 	return pos;
-}
-int frame_emmac_parse_eb_ack(uint8_t *data, int length, frame802154_t *pf){
-	return 0;
 }
 
 /** \}   */

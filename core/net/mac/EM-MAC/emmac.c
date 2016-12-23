@@ -597,7 +597,7 @@ static int resync_neighbor(mac_callback_t sent, linkaddr_t receiver, void *ptr, 
 /*---------------------------------------------------------------------------*/
 static int send_packet(mac_callback_t sent, void *ptr, linkaddr_t receiver, struct rdc_buf_list *buf_list)
 {
-//	printf("here!\n");
+	printf("here!\n");
 	uint8_t neighbor_channel;
 	uint8_t done=0;
 	time_in_advance=RTIMER_SECOND/50;
@@ -673,7 +673,7 @@ ack_restart:	do{
 				if ((len == BEACON_LENGTH || len == ACK_LENGTH) && (beacon_buf[0] & 7) == FRAME802154_BEACONFRAME){
 					unsigned int local_time_tics = RTIMER_NOW()%RTIMER_SECOND;
 					unsigned int local_time_seconds = clock_seconds();
-//					printf("HERE!\n");
+					printf("HERE!\n");
 					linkaddr_t sender_addr = parse_eb_ack(&beacon_buf,
 							FRAME802154_BEACONFRAME,
 							local_time_tics,
@@ -763,12 +763,13 @@ ack_restart:	do{
 		/***************************************************************************************/
 
 		int last_sent_ok = 0;
+		packetbuf_set_attr(PACKETBUF_ATTR_PACKET_TYPE, PACKETBUF_ATTR_PACKET_TYPE_TIMESTAMP); //
 		packetbuf_set_addr(PACKETBUF_ADDR_SENDER, &linkaddr_node_addr);
 		packetbuf_set_attr(PACKETBUF_ATTR_MAC_ACK,1);
-		packetbuf_set_attr( PACKETBUF_ATTR_NODE_STATE_FLAG, 1);
-		packetbuf_set_attr(PACKETBUF_ATTR_NODE_TIMESTAMP_FLAG, 1);
-		packetbuf_set_attr(PACKETBUF_ATTR_NODE_RAND_SEED_FLAG, 1);
+//		packetbuf_set_attr(PACKETBUF_ATTR_NODE_RADIO_TIMESTAMP_FLAG, 1);
 		packetbuf_set_attr(PACKETBUF_ATTR_NODE_STATE_FLAG, 1);
+//		packetbuf_set_attr(PACKETBUF_ATTR_NODE_TIMESTAMP_FLAG, 1);
+//		packetbuf_set_attr(PACKETBUF_ATTR_NODE_RAND_SEED_FLAG, 1);
 		packetbuf_set_attr(PACKETBUF_ATTR_NODE_TIMESTAMP, w_up_time);
 		packetbuf_set_attr(PACKETBUF_ATTR_NODE_CLOCK_TIME, time_in_seconds);
 		packetbuf_set_attr(PACKETBUF_ATTR_NODE_RAND_SEED, initial_rand_seed);

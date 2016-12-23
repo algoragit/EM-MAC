@@ -621,6 +621,7 @@ cc2420_init(void)
 static int
 cc2420_transmit(unsigned short payload_len)
 {
+//	printf("cctx\n");
   int i, txpower;
   
   GET_LOCK();
@@ -656,16 +657,18 @@ cc2420_transmit(unsigned short payload_len)
   for(i = LOOP_20_SYMBOLS; i > 0; i--) {
     if(CC2420_SFD_IS_1) {
       {
-        rtimer_clock_t sfd_timestamp;
+    	rtimer_clock_t sfd_timestamp;
         sfd_timestamp = RTIMER_NOW();
-        if(packetbuf_attr(PACKETBUF_ATTR_PACKET_TYPE) ==
-           PACKETBUF_ATTR_PACKET_TYPE_TIMESTAMP ||
-           packetbuf_attr(PACKETBUF_ATTR_NODE_RADIO_TIMESTAMP_FLAG) ==1)
+        if((packetbuf_attr(PACKETBUF_ATTR_PACKET_TYPE) == PACKETBUF_ATTR_PACKET_TYPE_ACK)
+        		|| (packetbuf_attr(PACKETBUF_ATTR_NODE_RADIO_TIMESTAMP_FLAG) ==1)
+//				|| packetbuf_attr(PACKETBUF_ATTR_NODE_STATE_FLAG) == 1)
+				)
             {
           /* Write timestamp to last two bytes of packet in TXFIFO. */
           write_ram((uint8_t *) &sfd_timestamp, CC2420RAM_TXFIFO + payload_len - 1, 2, WRITE_RAM_IN_ORDER);
-          //printf("Sender timestamp: %u\n", sfd_timestamp);
+//          printf("S_tst: %04x\n", sfd_timestamp);
         }
+        printf("cctype: %u %04x\n", packetbuf_attr(PACKETBUF_ATTR_PACKET_TYPE), sfd_timestamp);
       }
 
       if(!(get_status() & BV(CC2420_TX_ACTIVE))) {
@@ -747,6 +750,7 @@ cc2420_prepare(const void *payload, unsigned short payload_len)
 static int
 cc2420_send(const void *payload, unsigned short payload_len)
 {
+//	printf("ccse\n");
   cc2420_prepare(payload, payload_len);
   return cc2420_transmit(payload_len);
 }

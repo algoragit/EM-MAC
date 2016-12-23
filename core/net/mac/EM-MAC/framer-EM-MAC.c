@@ -105,8 +105,8 @@ create_frame(int type, int do_create)
 
 	params.fcf.frame_type = type;
 	params.fcf.frame_pending = packetbuf_attr(PACKETBUF_ATTR_PENDING);
-	params.fcf.timestamp_flag= packetbuf_attr( PACKETBUF_ATTR_NODE_TIMESTAMP_FLAG);
-	params.fcf.rand_seed_flag = packetbuf_attr( PACKETBUF_ATTR_NODE_RAND_SEED_FLAG);
+//	params.fcf.timestamp_flag= packetbuf_attr( PACKETBUF_ATTR_NODE_TIMESTAMP_FLAG);
+//	params.fcf.rand_seed_flag = packetbuf_attr( PACKETBUF_ATTR_NODE_RAND_SEED_FLAG);
 	params.fcf.state_flag =packetbuf_attr( PACKETBUF_ATTR_NODE_STATE_FLAG);
 	if(packetbuf_holds_broadcast()) {
 		params.fcf.ack_required = 0;
@@ -190,18 +190,30 @@ create_frame(int type, int do_create)
 	linkaddr_copy((linkaddr_t *)&params.src_addr, &linkaddr_node_addr);
 
 	/* Set the timestamp*/
-	if(params.fcf.timestamp_flag){
+//	if(params.fcf.timestamp_flag){
+//		params.timestamp=packetbuf_attr(PACKETBUF_ATTR_NODE_TIMESTAMP);
+//		params.clock_time=packetbuf_attr(PACKETBUF_ATTR_NODE_CLOCK_TIME);
+//	}
+//
+//	/*Set the random seed*/
+//	if(params.fcf.rand_seed_flag)
+//		params.random_seed=packetbuf_attr(PACKETBUF_ATTR_NODE_RAND_SEED);
+//
+//	/*Set the blacklist*/
+////	if(params.fcf.frame_type==0)
+//		params.blacklist=packetbuf_attr(PACKETBUF_ATTR_NODE_BLACKLIST);
+//
+//	params.clock_time_sent = clock_seconds();
+	if(params.fcf.state_flag){
 		params.timestamp=packetbuf_attr(PACKETBUF_ATTR_NODE_TIMESTAMP);
 		params.clock_time=packetbuf_attr(PACKETBUF_ATTR_NODE_CLOCK_TIME);
-	}
-
-	/*Set the random seed*/
-	if(params.fcf.rand_seed_flag)
+		/*Set the random seed*/
 		params.random_seed=packetbuf_attr(PACKETBUF_ATTR_NODE_RAND_SEED);
-
-	/*Set the blacklist*/
-//	if(params.fcf.frame_type==0)
+		/*Set the blacklist*/
 		params.blacklist=packetbuf_attr(PACKETBUF_ATTR_NODE_BLACKLIST);
+		/* Timestamp in seconds */
+		params.clock_time_sent = clock_seconds();
+	}
 
 	params.payload = packetbuf_dataptr();
 	params.payload_len = packetbuf_datalen();
@@ -266,19 +278,26 @@ parse(void)
 				packetbuf_set_addr(PACKETBUF_ADDR_RECEIVER, (linkaddr_t *)&frame.dest_addr);
 			}
 		}
-		if(frame.fcf.timestamp_flag){
+//		if(frame.fcf.timestamp_flag){
+//			packetbuf_set_attr(PACKETBUF_ATTR_NODE_TIMESTAMP, frame.timestamp);
+//			packetbuf_set_attr(PACKETBUF_ATTR_NODE_CLOCK_TIME, frame.clock_time);
+//		}
+//
+//		if(frame.fcf.rand_seed_flag)
+//			packetbuf_set_attr(PACKETBUF_ATTR_NODE_RAND_SEED, frame.random_seed);
+//
+////		if(frame.fcf.frame_type==0)
+//			packetbuf_set_attr(PACKETBUF_ATTR_NODE_BLACKLIST, frame.blacklist);
+//
+//		packetbuf_set_attr(PACKETBUF_ATTR_NODE_TIMESTAMP_FLAG, frame.fcf.timestamp_flag);
+//		packetbuf_set_attr(PACKETBUF_ATTR_NODE_RAND_SEED_FLAG, frame.fcf.rand_seed_flag);
+//		packetbuf_set_attr(PACKETBUF_ATTR_NODE_STATE_FLAG, frame.fcf.state_flag);
+		if(frame.fcf.state_flag){
 			packetbuf_set_attr(PACKETBUF_ATTR_NODE_TIMESTAMP, frame.timestamp);
 			packetbuf_set_attr(PACKETBUF_ATTR_NODE_CLOCK_TIME, frame.clock_time);
-		}
-
-		if(frame.fcf.rand_seed_flag)
 			packetbuf_set_attr(PACKETBUF_ATTR_NODE_RAND_SEED, frame.random_seed);
-
-//		if(frame.fcf.frame_type==0)
 			packetbuf_set_attr(PACKETBUF_ATTR_NODE_BLACKLIST, frame.blacklist);
-
-		packetbuf_set_attr(PACKETBUF_ATTR_NODE_TIMESTAMP_FLAG, frame.fcf.timestamp_flag);
-		packetbuf_set_attr(PACKETBUF_ATTR_NODE_RAND_SEED_FLAG, frame.fcf.rand_seed_flag);
+		}
 		packetbuf_set_attr(PACKETBUF_ATTR_NODE_STATE_FLAG, frame.fcf.state_flag);
 
 		packetbuf_set_addr(PACKETBUF_ADDR_SENDER, (linkaddr_t *)&frame.src_addr);
